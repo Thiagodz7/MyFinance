@@ -10,11 +10,12 @@ namespace MyFinance.Worker.Consumers
         // Injetamos o repositório
         private readonly IContaRepository _contaRepository;
         private readonly IUnitOfWork _uow;
-
+        //private readonly ICategoriaRepository _categoriaRepository;
         public LancamentoCriadoConsumer(IContaRepository contaRepository, IUnitOfWork uow)
         {
             _contaRepository = contaRepository;
             _uow = uow;
+            //_categoriaRepository = categoriaRepository;
         }
 
         public async Task Consume(ConsumeContext<LancamentoCriadoEvent> context)

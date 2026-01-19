@@ -27,7 +27,18 @@ namespace MyFinance.Infrastructure.Repositories
         {
             return await _context.Lancamentos
                 .Where(x => x.ContaId == contaId)
+                .AsNoTracking()
+                .Include(l => l.Categoria)
                 .OrderByDescending(x => x.DataVencimento) // Mais recentes primeiro
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Lancamento>> ObterPorPeriodoAsync(DateTime inicio, DateTime fim)
+        {
+            return await _context.Lancamentos
+                .AsNoTracking()
+                .Include(l => l.Categoria) // <--- O PULO DO GATO: Faz o JOIN no SQL
+                .Where(l => l.DataVencimento >= inicio && l.DataVencimento <= fim)
                 .ToListAsync();
         }
     }

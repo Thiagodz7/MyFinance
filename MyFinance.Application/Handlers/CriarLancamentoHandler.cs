@@ -13,22 +13,32 @@ namespace MyFinance.Application.Handlers
         private readonly ILancamentoRepository _repository;
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IUnitOfWork _uow;
+        private readonly ICategoriaRepository _categoriaRepository;
 
         // Injetamos o Repositório aqui. O Handler não conhece o DbContext, só o contrato!
-        public CriarLancamentoHandler(ILancamentoRepository repository, IPublishEndpoint publishEndpoint, IUnitOfWork uow)
+        public CriarLancamentoHandler(ILancamentoRepository repository, IPublishEndpoint publishEndpoint, IUnitOfWork uow, ICategoriaRepository categoriaRepository)
         {
             _repository = repository;
             _publishEndpoint = publishEndpoint;
             _uow = uow;
+            _categoriaRepository = categoriaRepository;
         }
 
         public async Task<Guid> Handle(CriarLancamentoCommand request, CancellationToken cancellationToken)
         {
-            // 1.0 Salva no Banco (Síncrono)
-            // 1.1 Converte o Command (DTO) para a Entidade de Domínio
-            var lancamento = new Lancamento(request.Descricao, request.Valor, request.DataVencimento, request.ContaId);
+            // 1.1 Validação de Regra de Negócio (Fail Fast)
+            var categoria = await _categoriaRepository.GetByIdAsync(request.CategoriaId);
+            if (categoria == null)
+            {
+                throw new Exception("Categoria não encontrada.");
+                // Num cenário real, usaríamos um Result Pattern ou Notification Pattern pra não soltar Exception
+            }
 
-            // 1.2 Chama a Infra para salvar
+            // 1.1 Salva no Banco (Síncrono)
+            // 1.2 Converte o Command (DTO) para a Entidade de Domínio
+            var lancamento = new Lancamento(request.Descricao, request.Valor, request.DataVencimento, request.ContaId, request.CategoriaId);
+
+            // 1.3 Chama a Infra para salvar
             await _repository.AddAsync(lancamento);
 
             // 2.1 Unit of Work efetiva a gravação no banco
@@ -42,14 +52,13 @@ namespace MyFinance.Application.Handlers
                 Descricao = lancamento.Descricao,
                 Valor = lancamento.Valor,
                 DataOcorrencia = lancamento.DataVencimento,
-                ContaId = request.ContaId
+                ContaId = request.ContaId,
+                CategoriaId = request.CategoriaId
             }, cancellationToken);
 
 
             // 3.0 Retorna o ID gerado
             return lancamento.Id;
-
-
         }
     }
 }

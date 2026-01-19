@@ -9,8 +9,7 @@ namespace MyFinance.Application.Handlers
     {
         private readonly IContaRepository _contaRepo;
         private readonly ILancamentoRepository _lancamentoRepo;
-
-        public ObterExtratoHandler(IContaRepository contaRepo, ILancamentoRepository lancamentoRepo)
+        public ObterExtratoHandler(IContaRepository contaRepo, ILancamentoRepository lancamentoRepo )
         {
             _contaRepo = contaRepo;
             _lancamentoRepo = lancamentoRepo;
@@ -18,7 +17,7 @@ namespace MyFinance.Application.Handlers
 
         public async Task<ExtratoDto> Handle(ObterExtratoQuery request, CancellationToken cancellationToken)
         {
-            // 1. Busca os dados da Conta (pra saber o saldo)
+            // 1.0 Busca os dados da Conta (pra saber o saldo)
             var conta = await _contaRepo.GetByIdAsync(request.ContaId);
 
             if (conta == null)
@@ -39,6 +38,7 @@ namespace MyFinance.Application.Handlers
                     Id = l.Id,
                     Descricao = l.Descricao,
                     Valor = l.Valor,
+                    Categoria = l.Categoria?.Nome ?? "Sem Categoria",
                     Data = l.DataVencimento,
                     Tipo = l.Valor >= 0 ? "Receita" : "Despesa" // Lógica simples de visualização
                 }).ToList()

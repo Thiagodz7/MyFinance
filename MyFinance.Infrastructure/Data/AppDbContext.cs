@@ -13,7 +13,9 @@ namespace MyFinance.Infrastructure.Data
 
         // Representação das tabelas
         public DbSet<Lancamento> Lancamentos { get; set; }
-        public DbSet<Conta> Contas { get; set; } // <--- Adicione isso
+        public DbSet<Conta> Contas { get; set; }
+        public DbSet<Categoria> Categorias { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // Essa linha mágica carrega todas as configurações (como a LancamentoConfiguration) 

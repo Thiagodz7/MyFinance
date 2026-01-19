@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // 2. Injeção de Dependência do Repositório de Contas
 builder.Services.AddScoped<IContaRepository, ContaRepository>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<ICategoriaRepository, CategoriaRepository>();
 
 // Configuração do MassTransit
 builder.Services.AddMassTransit(x =>

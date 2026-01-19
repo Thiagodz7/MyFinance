@@ -36,6 +36,18 @@ namespace MyFinance.Infrastructure.Data.Configurations
                    .WithMany()                  // Uma Conta tem MUITOS Lançamentos (não mapeamos a lista na volta, então fica vazio)
                    .HasForeignKey(x => x.ContaId) // A chave que liga eles é o ContaId
                    .OnDelete(DeleteBehavior.Restrict); // Segurança: Se tentar apagar a Conta, o banco BLOQUEIA se tiver lançamentos nela (pra não perder histórico)
+
+            // ==========================================================   
+            // Configuração do Relacionamento com Categoria (Foreign Key)
+            // ==========================================================
+
+            builder.Property(x => x.CategoriaId)
+                .IsRequired();
+
+            builder.HasOne(x => x.Categoria)
+                    .WithMany()
+                    .HasForeignKey(x => x.CategoriaId)
+                    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

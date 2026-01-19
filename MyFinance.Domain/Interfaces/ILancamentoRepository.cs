@@ -7,5 +7,6 @@ namespace MyFinance.Domain.Interfaces
         // Usamos Task para operações assíncronas (async/await)
         Task AddAsync(Lancamento lancamento);
         Task<IEnumerable<Lancamento>> GetByContaIdAsync(Guid contaId);
+        Task<IEnumerable<Lancamento>> ObterPorPeriodoAsync(DateTime inicio, DateTime fim);
     }
 }
