@@ -15,8 +15,14 @@
 
             Nome = nome;
             Tipo = tipo;
-        } 
-        
+        }
+
+        public void Atualizar(string nome, TipoCategoria tipo)
+        {
+            Nome = nome;
+            Tipo = tipo;
+        }
+
         protected Categoria() { } // Construtor protegido para EF Core
     }
 

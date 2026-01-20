@@ -6,6 +6,8 @@ namespace MyFinance.Domain.Interfaces
     {
         Task<Categoria?> GetByIdAsync(Guid id);
         Task<IEnumerable<Categoria>> GetAllAsync();
-        Task AddAsync(Categoria categoria); // Pra gente criar novas no futuro
+        Task AddAsync(Categoria categoria); 
+        void Update(Categoria categoria);
+        void Delete(Categoria categoria);
     }
 }

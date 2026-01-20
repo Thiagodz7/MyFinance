@@ -30,5 +30,15 @@ namespace MyFinance.Infrastructure.Repositories
             await _context.Categorias.AddAsync(categoria);
             // Lembra? Não damos SaveChanges aqui porque o UnitOfWork cuida disso!
         }
+
+        public void Update(Categoria categoria)
+        {
+            _context.Categorias.Update(categoria);
+        }
+
+        public void Delete(Categoria categoria)
+        {
+            _context.Categorias.Remove(categoria);
+        }
     }
 }
