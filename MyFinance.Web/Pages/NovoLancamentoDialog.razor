@@ -1,0 +1,138 @@
+﻿@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Descricao" Label="Descrição" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudNumericField @bind-Value="Valor" Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentText="R$" Format="N2" />
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem Value="@("Receita")" />
+                    <MudSelectItem Value="@("Despesa")" />
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudSelect T="Guid" Label="Categoria" @bind-Value="CategoriaId" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @if (categorias != null)
+                    {
+                        @foreach (var cat in categorias)
+                        {
+                            <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_processando">
+            @if (_processando)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Salvando...</MudText>
+            }
+            else
+            {
+                <MudText>Salvar</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Guid ContaId { get; set; } // <--- Recebemos o ID da Conta
+
+    // Propriedades do Formulário
+    public string Descricao { get; set; } = string.Empty;
+    public decimal Valor { get; set; } = 0;
+    public string TipoSelecionado { get; set; } = "Despesa"; // Padrão
+    public DateTime? DataVencimento { get; set; } = DateTime.Today;
+    public Guid CategoriaId { get; set; }
+
+    // Listas e Controles
+    private List<CategoriaDto>? categorias;
+    private bool _processando = false;
+
+    // Ao abrir, carrega as categorias
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
+
+            // Seleciona a primeira categoria pra não ficar vazio (UX)
+            if (categorias != null && categorias.Any())
+            {
+                CategoriaId = categorias.First().Id;
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Erro ao carregar categorias.", Severity.Warning);
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    async Task Submit()
+    {
+        if (Valor <= 0)
+        {
+            Snackbar.Add("O valor deve ser maior que zero.", Severity.Warning);
+            return;
+        }
+
+        _processando = true;
+
+        try
+        {
+            // Lógica Matemática: Se for Despesa, vira negativo
+            decimal valorFinal = TipoSelecionado == "Despesa" ? Valor * -1 : Valor;
+
+            var command = new
+            {
+                Descricao = Descricao,
+                Valor = valorFinal,
+                DataVencimento = DataVencimento ?? DateTime.Now,
+                ContaId = ContaId,
+                CategoriaId = CategoriaId
+            };
+
+            var response = await Http.PostAsJsonAsync("api/lancamentos", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Lançamento criado!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Erro ao salvar lançamento.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processando = false;
+        }
+    }
+}

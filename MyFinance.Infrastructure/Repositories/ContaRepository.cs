@@ -14,6 +14,12 @@ namespace MyFinance.Infrastructure.Repositories
             _context = context;
         }
 
+        // Adicione o método
+        public async Task<IEnumerable<Conta>> GetAllAsync()
+        {
+            return await _context.Contas.AsNoTracking().ToListAsync();
+        }
+
         public async Task<Conta> GetByIdAsync(Guid id)
         {
             return await _context.Contas.FindAsync(id);

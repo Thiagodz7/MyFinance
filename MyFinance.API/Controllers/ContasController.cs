@@ -24,5 +24,14 @@ namespace MyFinance.API.Controllers
 
             return Ok(resultado);
         }
+
+        // GET: api/Contas
+        [HttpGet]
+        public async Task<IActionResult> ObterTodas()
+        {
+            var query = new ObterTodasContasQuery();
+            var resultado = await _mediator.Send(query);
+            return Ok(resultado);
+        }
     }
 }

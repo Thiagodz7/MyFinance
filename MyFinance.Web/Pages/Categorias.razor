@@ -1,0 +1,76 @@
+﻿@page "/categorias"
+@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+<div class="d-flex justify-space-between align-center mb-4">
+    <MudText Typo="Typo.h4">Categorias</MudText>
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="AbrirDialog">
+        Nova Categoria
+    </MudButton>
+</div>
+
+@if (categorias == null)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+ 
+    <MudTable Items="@categorias" Hover="true" Striped="true">
+        <HeaderContent>
+            <MudTh>Nome</MudTh>
+            <MudTh>Tipo</MudTh>
+            <MudTh>Ações</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Nome">@context.Nome</MudTd>
+            <MudTd DataLabel="Tipo">
+                @if (context.Tipo == "Receita")
+                {
+                    <MudChip T="string" Color="Color.Success" Size="Size.Small">Receita</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small">Despesa</MudChip>
+                }
+            </MudTd>
+            <MudTd>
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<CategoriaDto>? categorias;
+
+    private async Task AbrirDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<CategoriaDialog>("Nova Categoria", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Se salvou, recarrega a lista para aparecer o item novo
+            await CarregarCategorias();
+        }
+    }
+
+    // Refatorei o OnInitialized para poder chamar de novo
+    private async Task CarregarCategorias()
+    {
+        categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarCategorias();
+    }
+}

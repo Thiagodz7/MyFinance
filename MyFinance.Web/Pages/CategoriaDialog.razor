@@ -1,0 +1,79 @@
+﻿@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="Model.Nome" Label="Nome" />
+
+        <MudSelect T="int" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter">
+            <MudSelectItem Value="0">Receita</MudSelectItem>
+            <MudSelectItem Value="1">Despesa</MudSelectItem>
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Disabled="_processando">Cancelar</MudButton>
+
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   OnClick="Submit"
+                   Disabled="_processando">
+            @if (_processando)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Salvando...</MudText>
+            }
+            else
+            {
+                <MudText>Salvar</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    public CategoriaDto Model { get; set; } = new();
+    public int TipoSelecionado { get; set; } = 1;
+
+    // Variável para controlar o estado do botão
+    private bool _processando = false;
+
+    void Cancel() => MudDialog.Cancel();
+
+    async Task Submit()
+    {
+        // 1. Trava o botão imediatamente
+        _processando = true;
+        StateHasChanged(); // Força a tela a atualizar para mostrar o loading
+
+        try
+        {
+            var command = new
+            {
+                Nome = Model.Nome,
+                Tipo = TipoSelecionado
+            };
+
+            var response = await Http.PostAsJsonAsync("api/categorias", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Sucesso!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Erro ao salvar!", Severity.Error);
+                // Se der erro, destrava o botão para o usuário tentar de novo
+                _processando = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+            _processando = false;
+        }
+    }
+}

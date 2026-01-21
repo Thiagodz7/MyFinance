@@ -1,0 +1,115 @@
+﻿@page "/lancamentos"
+@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" Class="mb-4">Extrato</MudText>
+
+@if (_carregando)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <MudText>Carregando dados...</MudText>
+}
+else if (extrato == null)
+{
+    <MudAlert Severity="Severity.Warning">Nenhuma conta encontrada. Cadastre uma conta no banco de dados.</MudAlert>
+}
+else
+{
+    <MudPaper Class="p-4 mb-4 d-flex justify-space-between align-center" Elevation="3">
+        <div>
+            <MudText Typo="Typo.caption">Conta</MudText>
+            <MudText Typo="Typo.h6">@extrato.NomeConta</MudText>
+        </div>
+        <div class="text-end">
+            <MudText Typo="Typo.caption">Saldo Atual</MudText>
+            <MudText Typo="Typo.h4" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)">
+                @extrato.SaldoAtual.ToString("C2")
+            </MudText>
+        </div>
+    </MudPaper>
+
+    <div class="d-flex justify-space-between align-center mb-4">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="AbrirDialog">
+            Novo Lançamento
+        </MudButton>
+    </div>
+
+    <MudTable Items="@extrato.Lancamentos" Hover="true" Striped="true" Dense="true">
+        <HeaderContent>
+            <MudTh>Data</MudTh>
+            <MudTh>Descrição</MudTh>
+            <MudTh>Categoria</MudTh>
+            <MudTh>Valor</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Data">@context.Data.ToString("dd/MM/yyyy")</MudTd>
+            <MudTd DataLabel="Descrição">@context.Descricao</MudTd>
+            <MudTd DataLabel="Categoria">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                    @context.Categoria
+                </MudChip>
+            </MudTd>
+            <MudTd DataLabel="Valor">
+                <MudText Color="@(context.Valor >= 0 ? Color.Success : Color.Error)">
+                    @context.Valor.ToString("C2")
+                </MudText>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private ExtratoDto? extrato;
+    private bool _carregando = true;
+
+    private async Task AbrirDialog()
+    {
+        if (extrato == null) return; // Segurança
+
+        var parameters = new DialogParameters();
+        parameters.Add("ContaId", extrato.ContaId); // Passando o parâmetro pro Modal
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<NovoLancamentoDialog>("Novo Lançamento", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Se salvou, recarrega o extrato para ver o saldo mudar e o item aparecer
+            await CarregarExtrato();
+        }
+    }
+
+    private async Task CarregarExtrato()
+    {
+        try
+        {
+            _carregando = true;
+            var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
+
+            if (contas != null && contas.Any())
+            {
+                var contaId = contas.First().Id;
+                extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaId}/extrato");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro: {ex.Message}");
+        }
+        finally
+        {
+            _carregando = false;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarExtrato();
+    }
+}
