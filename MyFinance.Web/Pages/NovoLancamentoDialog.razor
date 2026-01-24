@@ -14,7 +14,7 @@
             </MudItem>
 
             <MudItem xs="6">
-                <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="true">
                     <MudSelectItem Value="@("Receita")" />
                     <MudSelectItem Value="@("Despesa")" />
                 </MudSelect>
@@ -25,12 +25,19 @@
             </MudItem>
 
             <MudItem xs="6">
-                <MudSelect T="Guid" Label="Categoria" @bind-Value="CategoriaId" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelect T="CategoriaDto"
+                           Label="Categoria"
+                           Value="_categoriaSelecionada"
+                           ValueChanged="OnCategoriaChanged"
+                           ToStringFunc="@(cat => cat?.Nome)"
+                           AnchorOrigin="Origin.BottomCenter"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
                     @if (categorias != null)
                     {
                         @foreach (var cat in categorias)
                         {
-                            <MudSelectItem Value="@cat.Id">@cat.Nome</MudSelectItem>
+                            <MudSelectItem Value="@cat" />
                         }
                     }
                 </MudSelect>
@@ -55,36 +62,48 @@
 
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-
-    [Parameter] public Guid ContaId { get; set; } // <--- Recebemos o ID da Conta
+    [Parameter] public Guid ContaId { get; set; }
 
     // Propriedades do Formulário
     public string Descricao { get; set; } = string.Empty;
     public decimal Valor { get; set; } = 0;
-    public string TipoSelecionado { get; set; } = "Despesa"; // Padrão
+    public string TipoSelecionado { get; set; } = "Despesa";
     public DateTime? DataVencimento { get; set; } = DateTime.Today;
-    public Guid CategoriaId { get; set; }
 
-    // Listas e Controles
+    // Objeto selecionado no dropdown (não apenas o ID)
+    private CategoriaDto? _categoriaSelecionada;
+
     private List<CategoriaDto>? categorias;
     private bool _processando = false;
 
-    // Ao abrir, carrega as categorias
     protected override async Task OnInitializedAsync()
     {
         try
         {
             categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
 
-            // Seleciona a primeira categoria pra não ficar vazio (UX)
+            // Seleciona a primeira categoria automaticamente (UX)
             if (categorias != null && categorias.Any())
             {
-                CategoriaId = categorias.First().Id;
+                // Dispara o método de mudança para já configurar o tipo correto
+                OnCategoriaChanged(categorias.First());
             }
         }
         catch (Exception)
         {
             Snackbar.Add("Erro ao carregar categorias.", Severity.Warning);
+        }
+    }
+
+    // Mágica: Quando escolhe a categoria, muda o Tipo automaticamente
+    private void OnCategoriaChanged(CategoriaDto categoria)
+    {
+        _categoriaSelecionada = categoria;
+
+        if (categoria != null)
+        {
+            // Se a categoria for "Salário" (Receita), o combo de Tipo muda sozinho para Receita
+            TipoSelecionado = categoria.Tipo;
         }
     }
 
@@ -98,11 +117,16 @@
             return;
         }
 
+        if (_categoriaSelecionada == null)
+        {
+            Snackbar.Add("Selecione uma categoria.", Severity.Warning);
+            return;
+        }
+
         _processando = true;
 
         try
         {
-            // Lógica Matemática: Se for Despesa, vira negativo
             decimal valorFinal = TipoSelecionado == "Despesa" ? Valor * -1 : Valor;
 
             var command = new
@@ -111,7 +135,7 @@
                 Valor = valorFinal,
                 DataVencimento = DataVencimento ?? DateTime.Now,
                 ContaId = ContaId,
-                CategoriaId = CategoriaId
+                CategoriaId = _categoriaSelecionada.Id // Pegamos o ID do objeto selecionado
             };
 
             var response = await Http.PostAsJsonAsync("api/lancamentos", command);

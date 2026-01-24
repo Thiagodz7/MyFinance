@@ -12,6 +12,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Configura o HttpClient para apontar para o Docker (localhost:8080)
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:8080/") });
 
+// Testar No Celular
+//builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.11:8080") });
+
 // Adiciona os serviços do MudBlazor
 builder.Services.AddMudServices();
 
