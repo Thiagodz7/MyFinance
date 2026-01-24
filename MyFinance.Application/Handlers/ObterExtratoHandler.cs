@@ -32,6 +32,7 @@ namespace MyFinance.Application.Handlers
             {
                 ContaId = conta.Id,
                 NomeConta = conta.Nome,
+                Banco = conta.Banco,
                 SaldoAtual = conta.SaldoAtual,
                 Lancamentos = lancamentos.Select(l => new LancamentoDto
                 {

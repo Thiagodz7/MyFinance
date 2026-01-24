@@ -25,9 +25,9 @@ namespace MyFinance.Infrastructure.Repositories
             return await _context.Contas.FindAsync(id);
         }
 
-        public async Task AddAsync(Conta conta)
+        public async Task AddAsync(Conta conta, CancellationToken cancellationToken)
         {
-            await _context.Contas.AddAsync(conta);
+            await _context.Contas.AddAsync(conta, cancellationToken);
             //await _context.SaveChangesAsync();
         }
 

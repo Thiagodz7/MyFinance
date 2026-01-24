@@ -11,6 +11,7 @@ namespace MyFinance.Infrastructure.Data.Configurations
             builder.ToTable("Contas");
             builder.HasKey(c => c.Id);
             builder.Property(c => c.Nome).IsRequired().HasMaxLength(50);
+            builder.Property(c => c.Banco).IsRequired().HasMaxLength(100);
             builder.Property(c => c.SaldoAtual).HasPrecision(18, 2);
         }
     }

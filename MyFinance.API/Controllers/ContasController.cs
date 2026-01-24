@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MyFinance.Application.Commands;
 using MyFinance.Application.Queries;
 
 namespace MyFinance.API.Controllers
@@ -32,6 +33,13 @@ namespace MyFinance.API.Controllers
             var query = new ObterTodasContasQuery();
             var resultado = await _mediator.Send(query);
             return Ok(resultado);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Criar([FromBody] CriarContaCommand command)
+        {
+            var id = await _mediator.Send(command);
+            return Ok(new { Id = id });
         }
     }
 }

@@ -22,6 +22,7 @@ namespace MyFinance.Application.Handlers
             {
                 Id = c.Id,
                 Nome = c.Nome,
+                Banco = c.Banco,
                 SaldoAtual = c.SaldoAtual
             });
         }

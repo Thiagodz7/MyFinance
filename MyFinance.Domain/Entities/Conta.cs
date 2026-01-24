@@ -3,13 +3,15 @@
     public class Conta : BaseEntity
     {
         public string Nome { get; private set; }
+        public string Banco { get; private set; }
         public decimal SaldoAtual { get; private set; }
 
         // Construtor para criar conta nova
-        public Conta(string nome, decimal saldoInicial)
+        public Conta(string nome, decimal saldoInicial, string banco)
         {
             Nome = nome;
             SaldoAtual = saldoInicial;
+            Banco = banco;
         }
 
         // [CORREÇÃO AQUI] Adicione este construtor vazio para o EF Core
