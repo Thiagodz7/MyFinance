@@ -7,7 +7,7 @@ services:
     container_name: myfinance_db
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=SenhaForte!007 # Senha do Admin (SA)
+      - SA_PASSWORD=${DB_PASSWORD} # Senha do Admin (SA)
     ports:
       - "1435:1433" # Porta padrão do SQL Server
     volumes:
@@ -34,7 +34,7 @@ services:
       - "8080:8080" # Mapeia a porta 8080 do seu PC para a 8080 do container
     environment:
       # API também precisa saber onde está o banco e o rabbit
-      - ConnectionStrings__DefaultConnection=Server=myfinance_db,1433;Database=MyFinanceDb;User Id=sa;Password=SenhaForte!007;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
       - RabbitMQ__Host=myfinance_bus
       # Permite o Scalar funcionar em Produção (Docker é considerado Prod as vezes)
       - ASPNETCORE_ENVIRONMENT=Development 
