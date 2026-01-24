@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   # O nosso Banco de Dados
-  sqlserver:
+  database:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: myfinance_db
     environment:
@@ -39,7 +39,7 @@ services:
       # Permite o Scalar funcionar em Produção (Docker é considerado Prod as vezes)
       - ASPNETCORE_ENVIRONMENT=Development 
     depends_on:
-      - sqlserver
+      - database
       - rabbitmq
 
   worker:
@@ -52,11 +52,11 @@ services:
       # AQUI ESTÁ A MÁGICA DO NETWORKING
       # Note que o Server é o NOME DO CONTAINER do banco (myfinance_db)
       # E a porta é a INTERNA (1433), pois eles estão na mesma rede
-      - ConnectionStrings__DefaultConnection=Server=myfinance_db,1433;Database=MyFinanceDb;User Id=sa;Password=SenhaForte!007;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
       # Configuração do RabbitMQ
       - RabbitMQ__Host=myfinance_bus
     depends_on:
-      - sqlserver
+      - database
       - rabbitmq
     restart: always
 
