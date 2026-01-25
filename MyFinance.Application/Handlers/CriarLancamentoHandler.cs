@@ -14,14 +14,16 @@ namespace MyFinance.Application.Handlers
         private readonly IPublishEndpoint _publishEndpoint;
         private readonly IUnitOfWork _uow;
         private readonly ICategoriaRepository _categoriaRepository;
+        private readonly IContaRepository _contaRepository;
 
         // Injetamos o Repositório aqui. O Handler não conhece o DbContext, só o contrato!
-        public CriarLancamentoHandler(ILancamentoRepository repository, IPublishEndpoint publishEndpoint, IUnitOfWork uow, ICategoriaRepository categoriaRepository)
+        public CriarLancamentoHandler(ILancamentoRepository repository, IPublishEndpoint publishEndpoint, IUnitOfWork uow, ICategoriaRepository categoriaRepository, IContaRepository contaRepository)
         {
             _repository = repository;
             _publishEndpoint = publishEndpoint;
             _uow = uow;
             _categoriaRepository = categoriaRepository;
+            _contaRepository = contaRepository;
         }
 
         public async Task<Guid> Handle(CriarLancamentoCommand request, CancellationToken cancellationToken)
@@ -34,12 +36,19 @@ namespace MyFinance.Application.Handlers
                 // Num cenário real, usaríamos um Result Pattern ou Notification Pattern pra não soltar Exception
             }
 
+            var conta = await _contaRepository.GetByIdAsync(request.ContaId);
+            if (conta == null)
+                throw new Exception("Conta bancária não encontrada.");
+
+            conta.AtualizarSaldo(request.Valor);
+
             // 1.1 Salva no Banco (Síncrono)
             // 1.2 Converte o Command (DTO) para a Entidade de Domínio
             var lancamento = new Lancamento(request.Descricao, request.Valor, request.DataVencimento, request.ContaId, request.CategoriaId);
 
             // 1.3 Chama a Infra para salvar
             await _repository.AddAsync(lancamento);
+            await _contaRepository.UpdateAsync(conta.Id, conta, cancellationToken);
 
             // 2.1 Unit of Work efetiva a gravação no banco
             await _uow.CommitAsync();

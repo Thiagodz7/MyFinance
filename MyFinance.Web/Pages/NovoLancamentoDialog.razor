@@ -37,7 +37,9 @@
                     {
                         @foreach (var cat in categorias)
                         {
-                            <MudSelectItem Value="@cat" />
+                            <MudSelectItem Value="@cat">
+                                @cat.Nome
+                            </MudSelectItem>
                         }
                     }
                 </MudSelect>

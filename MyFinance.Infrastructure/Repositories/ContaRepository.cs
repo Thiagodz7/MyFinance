@@ -31,10 +31,11 @@ namespace MyFinance.Infrastructure.Repositories
             //await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Conta conta)
+        public Task UpdateAsync(Guid id, Conta conta, CancellationToken cancellationToken)
         {
             _context.Contas.Update(conta);
-            //await _context.SaveChangesAsync();
+
+            return Task.CompletedTask;
         }
     }
 }

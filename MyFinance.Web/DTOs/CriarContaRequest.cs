@@ -1,10 +1,9 @@
 ﻿namespace MyFinance.Web.DTOs
 {
-    public class ContaDto
+    public class CriarContaRequest
     {
-        public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Banco { get; set; } = string.Empty;
-        public decimal SaldoAtual { get; set; }
+        public decimal SaldoInicial { get; set; }
     }
 }

@@ -1,0 +1,94 @@
+﻿@page "/contas"
+@using MyFinance.Web.DTOs
+@using MyFinance.Web.Pages
+@inject HttpClient Http
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+
+    <div class="d-flex justify-space-between align-center mb-6">
+        <div>
+            <MudText Typo="Typo.h5" Class="fw-bold">Minhas Contas</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">Gerencie seus saldos e bancos</MudText>
+        </div>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="AbrirNovaContaDialog">
+            Nova Conta
+        </MudButton>
+    </div>
+
+    @if (_contas == null)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (!_contas.Any())
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
+            Você ainda não cadastrou nenhuma conta. Clique no botão acima para começar!
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid>
+            @foreach (var conta in _contas)
+            {
+                <MudItem xs="12" sm="6" md="4">
+                    <MudPaper Elevation="2" Class="pa-4 d-flex flex-column gap-2" Style="border-radius: 12px; border-left: 6px solid var(--mud-palette-secondary);">
+
+                        <div class="d-flex justify-space-between align-center">
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold">@conta.Nome</MudText>
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Color="Color.Default" />
+                        </div>
+
+                        <MudText Typo="Typo.caption" Style="color: #64748B;">@conta.Banco</MudText>
+
+                        <MudDivider Class="my-2" />
+
+                        <MudText Typo="Typo.h5" Color="Color.Success" Class="fw-bold">
+                            @conta.SaldoAtual.ToString("C")
+                        </MudText>
+
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+</MudContainer>
+
+@code {
+    private List<ContaDto>? _contas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CarregarContas();
+    }
+
+    private async Task CarregarContas()
+    {
+        try
+        {
+            _contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+        }
+        catch (Exception)
+        {
+            // Em produção, logaríamos o erro
+        }
+    }
+
+    private async Task AbrirNovaContaDialog()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        var dialog = await DialogService.ShowAsync<NovaContaDialog>("Nova Conta Bancária", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            // Se o usuário criou a conta, recarregamos a lista
+            await CarregarContas();
+        }
+    }
+}

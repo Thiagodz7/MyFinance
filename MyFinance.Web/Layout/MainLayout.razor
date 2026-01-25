@@ -3,15 +3,18 @@
 
 <MudThemeProvider Theme="MyFinanceTheme.DefaultTheme" />
 <MudDialogProvider />
+<MudPopoverProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Dense="false">
+    <MudAppBar Elevation="1" Dense="false" Fixed="true" Class="px-4">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@((e) => DrawerToggle())"
-                       Class="d-md-none" /> <MudText Typo="Typo.h6" Class="ml-3 fw-bold">Dashboard</MudText>
+                       Class="d-md-none" />
+
+        <MudText Typo="Typo.h6" Class="ml-3 fw-bold">Dashboard</MudText>
 
         <MudSpacer />
 
@@ -22,7 +25,11 @@
         <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" />
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Variant="DrawerVariant.Responsive">
+    <MudDrawer @bind-Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Always"
+               Elevation="0"
+               Variant="DrawerVariant.Responsive"
+               Fixed="true">
 
         <MudDrawerHeader Class="d-flex align-center justify-center pa-4">
             <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="mr-2" />
@@ -45,8 +52,8 @@
 
     </MudDrawer>
 
-    <MudMainContent Class="pt-4 px-4">
-        <MudContainer MaxWidth="MaxWidth.Large">
+    <MudMainContent Class="pt-16 px-4">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
             @Body
         </MudContainer>
     </MudMainContent>
