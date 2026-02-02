@@ -1,0 +1,39 @@
+﻿@using static MudBlazor.Icons.Material
+
+<MudPaper Class="p-4 d-flex flex-column align-center justify-center" Elevation="3">
+    <MudIcon Icon="@Icone1" Color="CorIcone" Size="Tamanho" />
+    <MudText Typo="@Tipo1" Class="mt-2">@Titulo</MudText>
+    <MudText Typo="@Tipo2" Color="@(IsPositive() ? CorPadrao : CorError)">
+        @Valor.ToString("C2")
+    </MudText>
+</MudPaper>
+
+
+
+@code {
+    [Parameter] public string Titulo { get; set; } = string.Empty;
+    [Parameter] public decimal Valor { get; set; }
+    [Parameter] public bool Positivo { get; set; }
+    [Parameter] public string Icone1 { get; set; } = Icons.Material.Filled.AccountBalanceWallet;
+    [Parameter] public Color CorIcone { get; set; } = Color.Primary;
+    [Parameter] public Color CorError { get; set; } = Color.Error;
+    [Parameter] public Color CorPadrao { get; set; } = Color.Primary;
+    [Parameter] public Size Tamanho { get; set; } = Size.Large;
+    [Parameter] public Typo Tipo1 { get; set; } = Typo.subtitle2;
+    [Parameter] public Typo Tipo2 { get; set; } = Typo.subtitle2;
+
+    bool IsPositive()
+    {
+        if (Positivo)
+        {
+            if (Valor >= 0)
+                return true;
+            else
+                return false;           
+        }
+        else
+        {
+            return true;
+        }
+    } 
+}

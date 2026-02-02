@@ -2,6 +2,7 @@
 @using MyFinance.Web.DTOs
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject MyFinance.Web.Services.PageStateService PageState
 
 <div class="d-flex justify-space-between align-center mb-4">
     <MudText Typo="Typo.h4">Categorias</MudText>
@@ -48,6 +49,11 @@ else
 
 @code {
     private List<CategoriaDto>? categorias;
+
+    protected override void OnInitialized()
+    {
+        PageState.SetTitle("Categorias");
+    }
 
     private async Task AbrirDialog()
     {

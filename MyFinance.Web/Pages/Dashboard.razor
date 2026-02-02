@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using MyFinance.Web.DTOs
+@using MyFinance.Web.Shared
 @inject HttpClient Http
+@inject MyFinance.Web.Services.PageStateService PageState
 
 <MudText Typo="Typo.h4" Class="mb-4">Dashboard Financeiro</MudText>
 <MudText Typo="Typo.subtitle1" Class="mb-4 text-muted">Visão geral deste mês</MudText>
@@ -17,27 +19,22 @@ else
 {
     <MudGrid Class="mb-4">
         <MudItem xs="12" sm="4">
-            <MudPaper Class="p-4 d-flex flex-column align-center justify-center" Elevation="3">
-                <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Large" />
-                <MudText Typo="Typo.subtitle2" Class="mt-2">Receitas</MudText>
-                <MudText Typo="Typo.h5" Color="Color.Success">@dashboard.TotalReceitas.ToString("C2")</MudText>
-            </MudPaper>
+            <WidgetResumo Titulo="Receitas" Icone1="@Icons.Material.Filled.ArrowUpward"
+                          Valor="@dashboard.TotalReceitas" CorIcone="Color.Success"
+                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
+                          CorPadrao="Color.Success" CorError="Color.Error"></WidgetResumo>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudPaper Class="p-4 d-flex flex-column align-center justify-center" Elevation="3">
-                <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Large" />
-                <MudText Typo="Typo.subtitle2" Class="mt-2">Despesas</MudText>
-                <MudText Typo="Typo.h5" Color="Color.Error">@dashboard.TotalDespesas.ToString("C2")</MudText>
-            </MudPaper>
+            <WidgetResumo Titulo="Despesas" Icone1="@Icons.Material.Filled.ArrowDownward"
+                          Valor="@dashboard.TotalDespesas" CorIcone="Color.Error"
+                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
+                          CorPadrao="Color.Error" CorError="Color.Error"></WidgetResumo>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudPaper Class="p-4 d-flex flex-column align-center justify-center" Elevation="3">
-                <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Primary" Size="Size.Large" />
-                <MudText Typo="Typo.subtitle2" Class="mt-2">Saldo do Mês</MudText>
-                <MudText Typo="Typo.h5" Color="@(dashboard.SaldoTotal >= 0 ? Color.Primary : Color.Error)">
-                    @dashboard.SaldoTotal.ToString("C2")
-                </MudText>
-            </MudPaper>
+            <WidgetResumo Titulo="Saldo do Mês" Icone1="@Icons.Material.Filled.AccountBalanceWallet"
+                          Valor="@dashboard.SaldoTotal" CorIcone="Color.Primary"
+                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
+                          CorPadrao="Color.Primary" CorError="Color.Error" Positivo="true"></WidgetResumo>
         </MudItem>
     </MudGrid>
 
@@ -81,6 +78,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        PageState.SetTitle("Dashboard");
+
         try
         {
             _carregando = true;

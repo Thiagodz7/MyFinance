@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using MyFinance.Web;
-using MudBlazor.Services;
 using MudBlazor;
+using MudBlazor.Services;
+using MyFinance.Web;
+using MyFinance.Web.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -14,7 +15,9 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:8080/") });
 
 // Testar No Celular
-//builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.11:8080") });
+//builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.9:8080") });
+
+builder.Services.AddScoped<PageStateService>();
 
 // Adiciona os serviços do MudBlazor
 builder.Services.AddMudServices();

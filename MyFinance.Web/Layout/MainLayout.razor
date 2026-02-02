@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using MyFinance.Web.Themes
+@inject MyFinance.Web.Services.PageStateService PageState
 
 <MudThemeProvider Theme="MyFinanceTheme.DefaultTheme" />
 <MudDialogProvider />
@@ -7,14 +8,53 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1" Dense="false" Fixed="true" Class="px-4">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+    <MudDrawer @bind-Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Never"
+               Elevation="0"
+               Variant="DrawerVariant.Mini"
+               Fixed="true">
+
+        <MudDrawerHeader Class="d-flex align-center justify-start pa-4">
+            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="mr-2" />
+            @if (_drawerOpen)
+            {
+                <MudText Typo="Typo.h5" Style="font-weight: 700; color: white;">MyFinance</MudText>
+            }
+        </MudDrawerHeader>
+
+        <MudNavMenu Class="mt-4" Color="Color.Secondary">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+            <MudNavLink Href="/lancamentos" Icon="@Icons.Material.Filled.List">Lançamentos</MudNavLink>
+            <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.PieChart">Relatórios</MudNavLink>
+            @if (_drawerOpen)
+            {
+                <MudText Typo="Typo.subtitle2" Class="px-4 mt-6 mb-2" Style="color: #64748B;">CONFIGURAÇÕES</MudText>
+            }
+
+            <MudNavLink Href="/contas" Icon="@Icons.Material.Filled.AccountBalance">Contas Bancárias</MudNavLink>
+            <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
+        </MudNavMenu>
+
+        <div class="d-flex justify-center mt-auto mb-4">
+            @* Melhoria: Texto de versão dinâmico para não quebrar no modo Mini *@
+            <MudText Typo="Typo.caption" Style="color: #64748B;">
+                @(_drawerOpen ? "v1.0.0 Dev" : "v1.0")
+            </MudText>
+        </div>
+
+    </MudDrawer>
+
+
+    <MudAppBar Elevation="1" Dense="false" Fixed="true" Color="Color.Surface" Class="px-4">
+        <MudIconButton Icon="@(_drawerOpen? Icons.Material.Filled.MenuOpen : Icons.Material.Filled.Menu)"
                        Color="Color.Inherit"
                        Edge="Edge.Start"
                        OnClick="@((e) => DrawerToggle())"
-                       Class="d-md-none" />
+                        />
 
-        <MudText Typo="Typo.h6" Class="ml-3 fw-bold">Dashboard</MudText>
+        <MudText Typo="Typo.h6" Class="ml-3 fw-bold" Style="color: #1E293B;">
+            @PageState.Title
+        </MudText>
 
         <MudSpacer />
 
@@ -24,34 +64,7 @@
 
         <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" />
     </MudAppBar>
-
-    <MudDrawer @bind-Open="_drawerOpen"
-               ClipMode="DrawerClipMode.Always"
-               Elevation="0"
-               Variant="DrawerVariant.Responsive"
-               Fixed="true">
-
-        <MudDrawerHeader Class="d-flex align-center justify-center pa-4">
-            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="mr-2" />
-            <MudText Typo="Typo.h5" Style="font-weight: 700; color: white;">MyFinance</MudText>
-        </MudDrawerHeader>
-
-        <MudNavMenu Class="mt-4" Color="Color.Secondary">
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/lancamentos" Icon="@Icons.Material.Filled.List">Lançamentos</MudNavLink>
-            <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.PieChart">Relatórios</MudNavLink>
-
-            <MudText Typo="Typo.subtitle2" Class="px-4 mt-6 mb-2" Style="color: #64748B;">CONFIGURAÇÕES</MudText>
-            <MudNavLink Href="/contas" Icon="@Icons.Material.Filled.AccountBalance">Contas Bancárias</MudNavLink>
-            <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
-        </MudNavMenu>
-
-        <div class="d-flex justify-center mt-auto mb-4">
-            <MudText Typo="Typo.caption" Style="color: #64748B;">v1.0.0 Dev</MudText>
-        </div>
-
-    </MudDrawer>
-
+ 
     <MudMainContent Class="pt-16 px-4">
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
             @Body
@@ -61,6 +74,18 @@
 
 @code {
     bool _drawerOpen = true;
+
+    protected override void OnInitialized()
+    {
+        PageState.OnTitleChanged += HandleTitleChanged;
+    }
+
+    private void HandleTitleChanged() => StateHasChanged();
+
+    public void Dispose()
+    {
+        PageState.OnTitleChanged -= HandleTitleChanged;
+    }
 
     void DrawerToggle()
     {

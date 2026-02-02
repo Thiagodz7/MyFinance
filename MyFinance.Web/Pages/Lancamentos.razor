@@ -2,6 +2,7 @@
 @using MyFinance.Web.DTOs
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject MyFinance.Web.Services.PageStateService PageState
 
 <MudText Typo="Typo.h4" Class="mb-4">Extrato</MudText>
 
@@ -110,6 +111,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        PageState.SetTitle("Extrato Financeiro");
         await CarregarExtrato();
     }
 }
