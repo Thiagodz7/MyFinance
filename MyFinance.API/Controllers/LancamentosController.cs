@@ -23,5 +23,19 @@ namespace MyFinance.API.Controllers
 
             return Ok(new { Id = id });
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(Guid id)
+        {
+            try
+            {
+                await _mediator.Send(new DeletarLancamentoCommand(id));
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message); 
+            }
+        }
     }
 }

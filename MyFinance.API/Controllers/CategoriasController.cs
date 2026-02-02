@@ -43,7 +43,7 @@ namespace MyFinance.API.Controllers
         public async Task<IActionResult> Delete(Guid id)
         {
             await _mediator.Send(new DeletarCategoriaCommand(id));
-            return NoContent(); // 204 No Content (Padrão para Delete)
+            return NoContent(); 
         }
     }
 }

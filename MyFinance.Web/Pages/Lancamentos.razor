@@ -4,6 +4,7 @@
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
+@inject ISnackbar Snackbar
 
 @implements IDisposable
 @inject FinanceStateService FinanceState
@@ -63,6 +64,11 @@ else
                     @context.Valor.ToString("C2")
                 </MudText>
             </MudTd>
+            <MudTd DataLabel="Ações">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Color="Color.Error"
+                               OnClick="@(() => ConfirmarExclusao(context.Id))" />
+            </MudTd>
         </RowTemplate>
     </MudTable>
 }
@@ -109,6 +115,7 @@ else
                 {
                     var contaId = contas.First().Id;
                     extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaId}/extrato");
+                    FinanceState.SetAccount(contaId, contas.First().Nome);
                 }            
             }
         }
@@ -142,5 +149,58 @@ else
             await CarregarExtrato();
             StateHasChanged();
         });
+    }
+
+    private async Task ConfirmarExclusao(Guid id)
+    {
+        // 1. Configura o Modal de Confirmação
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
+        var parameters = new DialogParameters<MudDialog>
+        {
+            { "ContentText", "Deseja realmente excluir este lançamento? Esta ação não pode ser desfeita." },
+            { "ButtonText", "Excluir" },
+            { "Color", Color.Error }
+        };
+
+        // 2. Abre o Modal (estamos usando um Dialog padrão do MudBlazor aqui para simplificar)
+        var dialog = await DialogService.ShowMessageBox(
+            "Atenção",
+            "Deseja realmente excluir este lançamento?",
+            yesText: "Excluir",
+            cancelText: "Cancelar"
+        );
+
+        if (dialog == true)
+        {
+            await ExecutarExclusao(id);
+        }
+    }
+
+    private async Task ExecutarExclusao(Guid id)
+    {
+        try
+        {
+            var response = await Http.DeleteAsync($"api/Lancamentos/{id}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Lançamento excluído com sucesso!", Severity.Success);
+
+                // 3. ATENÇÃO: Avisamos o sistema que a conta mudou para
+                // o Dashboard e o Saldo no Header atualizarem!
+                FinanceState.SetAccount(FinanceState.SelectedAccountId, FinanceState.SelectedAccountName);
+
+                // 4. Recarrega a lista da página atual
+                await CarregarExtrato();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao excluir o lançamento.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro crítico: {ex.Message}", Severity.Error);
+        }
     }
 }

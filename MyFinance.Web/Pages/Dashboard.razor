@@ -35,7 +35,7 @@ else
                           CorPadrao="Color.Error" CorError="Color.Error"></WidgetResumo>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <WidgetResumo Titulo="Saldo do Mês" Icone1="@Icons.Material.Filled.AccountBalanceWallet"
+            <WidgetResumo Titulo="Lucro do Mês" Icone1="@Icons.Material.Filled.AccountBalanceWallet"
                           Valor="@dashboard.SaldoTotal" CorIcone="Color.Primary"
                           Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
                           CorPadrao="Color.Primary" CorError="Color.Error" Positivo="true"></WidgetResumo>
@@ -116,7 +116,7 @@ else
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
                 if (contas != null && contas.Any())
                 {
-                    idParaBuscar = contas.First().Id;
+                    idParaBuscar = contas.Last().Id;
                     // Opcional: Já define essa como a conta ativa no estado global
                     // FinanceState.SetAccount(idParaBuscar, contas.First().Nome);
                 }

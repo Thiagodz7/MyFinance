@@ -8,5 +8,7 @@ namespace MyFinance.Domain.Interfaces
         Task AddAsync(Lancamento lancamento);
         Task<IEnumerable<Lancamento>> GetByContaIdAsync(Guid contaId);
         Task<IEnumerable<Lancamento>> ObterPorPeriodoAsync(DateTime inicio, DateTime fim);
+        void Deletar(Lancamento lancamento);
+        Task<Lancamento?> GetByIdAsync(Guid id);
     }
 }

@@ -41,5 +41,15 @@ namespace MyFinance.Infrastructure.Repositories
                 .Where(l => l.DataVencimento >= inicio && l.DataVencimento <= fim)
                 .ToListAsync();
         }
+
+        public void Deletar(Lancamento lancamento)
+        {
+            _context.Lancamentos.Remove(lancamento);
+        }
+
+        public async Task<Lancamento?> GetByIdAsync(Guid id)
+        {
+            return await _context.Lancamentos.FirstOrDefaultAsync(c => c.Id == id);
+        }
     }
 }
