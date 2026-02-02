@@ -2,6 +2,10 @@
 @using MyFinance.Web.Themes
 @inject MyFinance.Web.Services.PageStateService PageState
 
+@implements IAsyncDisposable
+@inject IBrowserViewportService ViewportService
+@implements IBrowserViewportObserver
+
 <MudThemeProvider Theme="MyFinanceTheme.DefaultTheme" />
 <MudDialogProvider />
 <MudPopoverProvider />
@@ -9,9 +13,9 @@
 
 <MudLayout>
     <MudDrawer @bind-Open="_drawerOpen"
-               ClipMode="DrawerClipMode.Never"
+               ClipMode="@(_isMobile ? DrawerClipMode.Always : DrawerClipMode.Never)"
                Elevation="0"
-               Variant="DrawerVariant.Mini"
+               Variant="@(_isMobile ? DrawerVariant.Temporary : DrawerVariant.Mini)"
                Fixed="true">
 
         <MudDrawerHeader Class="d-flex align-center justify-start pa-4">
@@ -74,11 +78,37 @@
 
 @code {
     bool _drawerOpen = true;
+    bool _isMobile;
+    public Guid Id { get; } = Guid.NewGuid();
 
     protected override void OnInitialized()
     {
         PageState.OnTitleChanged += HandleTitleChanged;
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ViewportService.SubscribeAsync(this, fireImmediately: true);
+        }
+    }
+
+    public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs e)
+    {
+        // 1. Atualizamos se é mobile baseado no Breakpoint do evento
+        _isMobile = e.Breakpoint <= Breakpoint.Sm;
+
+        // 2. Ajustamos o menu: aberto no PC (Mini), fechado no Mobile (Temporary)
+        // Usamos InvokeAsync para garantir que a UI entenda a mudança de estado
+        await InvokeAsync(() =>
+        {
+            _drawerOpen = !_isMobile;
+            StateHasChanged();
+        });
+    }
+
+    public async ValueTask DisposeAsync() => await ViewportService.UnsubscribeAsync(this);
 
     private void HandleTitleChanged() => StateHasChanged();
 
