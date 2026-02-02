@@ -13,14 +13,16 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configura o HttpClient para apontar para o Docker (localhost:8080)
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:8080/") });
+builder.Services.AddScoped<PageStateService>();
+builder.Services.AddScoped<FinanceStateService>();
+
 
 // Testar No Celular
 //builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://192.168.1.9:8080") });
 
-builder.Services.AddScoped<PageStateService>();
 
 // Adiciona os serviços do MudBlazor
-builder.Services.AddMudServices();
+//builder.Services.AddMudServices();
 
 // Substitua o "builder.Services.AddMudServices();" por este bloco:
 builder.Services.AddMudServices(config =>

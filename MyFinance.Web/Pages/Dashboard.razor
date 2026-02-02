@@ -1,8 +1,12 @@
 ﻿@page "/"
 @using MyFinance.Web.DTOs
+@using MyFinance.Web.Services
 @using MyFinance.Web.Shared
 @inject HttpClient Http
 @inject MyFinance.Web.Services.PageStateService PageState
+
+@implements IDisposable
+@inject FinanceStateService FinanceState
 
 <MudText Typo="Typo.h4" Class="mb-4">Dashboard Financeiro</MudText>
 <MudText Typo="Typo.subtitle1" Class="mb-4 text-muted">Visão geral deste mês</MudText>
@@ -76,24 +80,52 @@ else
     private double[] dataGrafico = { };
     private string[] labelsGrafico = { };
 
+    public void Dispose()
+    {
+        FinanceState.OnAccountChanged -= HandleAccountChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         PageState.SetTitle("Dashboard");
+        FinanceState.OnAccountChanged += HandleAccountChanged;
+        await CarregarDadosDashboard();   
+    }
 
+    private async void HandleAccountChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await CarregarDadosDashboard();
+            StateHasChanged();
+        });
+    }
+
+    public async Task CarregarDadosDashboard()
+    {
         try
         {
             _carregando = true;
-            // 1. Pega a conta (Mesma lógica do Extrato)
-            var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
 
-            if (contas != null && contas.Any())
+            // LÓGICA CORRIGIDA:
+            // Prioriza o ID selecionado no Global State. Se for nulo, busca a primeira.
+            Guid? idParaBuscar = FinanceState.SelectedAccountId;
+
+            if (idParaBuscar == null)
             {
-                var contaId = contas.First().Id;
+                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
+                if (contas != null && contas.Any())
+                {
+                    idParaBuscar = contas.First().Id;
+                    // Opcional: Já define essa como a conta ativa no estado global
+                    // FinanceState.SetAccount(idParaBuscar, contas.First().Nome);
+                }
+            }
 
-                // 2. Chama a API do Dashboard
-                dashboard = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{contaId}");
+            if (idParaBuscar != null)
+            {
+                dashboard = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
 
-                // 3. Prepara os dados pro Gráfico (O MudChart pede arrays de double e string)
                 if (dashboard != null)
                 {
                     dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();

@@ -1,8 +1,12 @@
 ﻿@page "/lancamentos"
 @using MyFinance.Web.DTOs
+@using MyFinance.Web.Services
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
+
+@implements IDisposable
+@inject FinanceStateService FinanceState
 
 <MudText Typo="Typo.h4" Class="mb-4">Extrato</MudText>
 
@@ -91,12 +95,21 @@ else
         try
         {
             _carregando = true;
-            var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
-
-            if (contas != null && contas.Any())
+            
+            var idContaSelecionada = FinanceState.SelectedAccountId;
+            if (idContaSelecionada != null)
             {
-                var contaId = contas.First().Id;
-                extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaId}/extrato");
+                extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{idContaSelecionada}/extrato");
+            }
+            else
+            {
+                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
+
+                if ((contas != null && contas.Any()))
+                {
+                    var contaId = contas.First().Id;
+                    extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaId}/extrato");
+                }            
             }
         }
         catch (Exception ex)
@@ -109,9 +122,25 @@ else
         }
     }
 
+
+    public void Dispose()
+    {
+        FinanceState.OnAccountChanged -= HandleAccountChanged;
+    }
+
     protected override async Task OnInitializedAsync()
     {
         PageState.SetTitle("Lançamentos");
+        FinanceState.OnAccountChanged += HandleAccountChanged;
         await CarregarExtrato();
+    }
+
+    private async void HandleAccountChanged()
+    {
+        await InvokeAsync(async () =>
+        {
+            await CarregarExtrato();
+            StateHasChanged();
+        });
     }
 }

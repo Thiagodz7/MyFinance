@@ -1,0 +1,41 @@
+﻿@using MyFinance.Web.DTOs
+@using MyFinance.Web.Services
+@inject HttpClient Http
+@inject FinanceStateService FinanceState
+
+<MudSelect T="Guid?"
+           Label="Conta Ativa"
+           Value="FinanceState.SelectedAccountId"
+           ValueChanged="OnAccountSelected"
+           Variant="Variant.Outlined"
+           Margin="Margin.Dense"
+           Dense="true"
+           Class="max-z-index"
+           Style="width: 200px; background-color: white; border-radius: 8px;">
+
+    <MudSelectItem T="Guid?" Value="null">Todas as Contas</MudSelectItem>
+
+    @if (_contas != null)
+    {
+        foreach (var conta in _contas)
+        {
+            <MudSelectItem T="Guid?" Value="@conta.Id">@conta.Nome</MudSelectItem>
+        }
+    }
+</MudSelect>
+
+@code {
+    private List<ContaDto>? _contas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Busca as contas que você já tem cadastradas no banco
+        _contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+    }
+
+    private void OnAccountSelected(Guid? id)
+    {
+        var nome = _contas?.FirstOrDefault(c => c.Id == id)?.Nome ?? "Todas as Contas";
+        FinanceState.SetAccount(id, nome);
+    }
+}
