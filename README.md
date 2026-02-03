@@ -119,12 +119,3 @@ Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes
 <div align="center"> <sub>Desenvolvido com 💜 por Thiago Rodrigues</sub> </div>
 
 
------
-
-### 🎨 Dica Extra para ficar "Profissional":
-
-Para gerar a estrutura de pastas bonita (aquela árvore de diretórios ali no meio), você pode usar o comando `tree` no terminal ou sites geradores.
-
-Esse README mostra que você não é apenas um "codificador", mas um **Engenheiro de Software** que se preocupa com documentação e produto.
-
-Boa sorte com o projeto\! 🚀
