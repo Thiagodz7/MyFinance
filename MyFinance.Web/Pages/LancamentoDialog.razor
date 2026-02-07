@@ -1,0 +1,216 @@
+﻿@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Descricao" Label="Descrição" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="6">
+                @* Valor sempre positivo visualmente *@
+                <MudNumericField @bind-Value="Valor" Label="Valor" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentText="R$" Format="N2" Min="0.01M" />
+            </MudItem>
+
+            <MudItem xs="6">
+                @* Tipo desbloqueado para permitir corrigir sinal (Receita vs Despesa) *@
+                <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado"
+                           AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" 
+                           Margin="Margin.Dense" Disabled="true">
+                    <MudSelectItem Value="@("Receita")" />
+                    <MudSelectItem Value="@("Despesa")" />
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="6">
+                <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" />
+            </MudItem>
+
+            <MudItem xs="6">
+                @* Disabled se estiver editando *@
+                <MudSelect T="CategoriaDto"
+                           Label="Categoria"
+                           Value="_categoriaSelecionada"
+                           ValueChanged="OnCategoriaChanged"
+                           ToStringFunc="@(cat => cat?.Nome)"
+                           AnchorOrigin="Origin.BottomCenter"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Disabled="@(LancamentoEditar != null)">
+                    @if (categorias != null)
+                    {
+                        @foreach (var cat in categorias)
+                        {
+                            <MudSelectItem Value="@cat">@cat.Nome</MudSelectItem>
+                        }
+                    }
+                </MudSelect>
+                @if (LancamentoEditar != null)
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning">Categoria fixa na edição.</MudText>
+                }
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_processando">
+            @if (_processando)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processando...</MudText>
+            }
+            else
+            {
+                <MudText>@(LancamentoEditar == null ? "Salvar" : "Atualizar")</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Guid ContaId { get; set; }
+    [Parameter] public LancamentoDto? LancamentoEditar { get; set; } // O segredo da edição
+
+    public string Descricao { get; set; } = string.Empty;
+    public decimal Valor { get; set; } = 0;
+    public string TipoSelecionado { get; set; } = "Despesa";
+    public DateTime? DataVencimento { get; set; } = DateTime.Today;
+
+    private CategoriaDto? _categoriaSelecionada;
+    private List<CategoriaDto>? categorias;
+    private bool _processando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
+
+            if (LancamentoEditar != null)
+            {
+                // --- MODO EDIÇÃO ---
+                Descricao = LancamentoEditar.Descricao;
+                DataVencimento = LancamentoEditar.Data;
+
+                // Converte valor negativo para positivo visual e ajusta o Tipo
+                if (LancamentoEditar.Valor < 0)
+                {
+                    TipoSelecionado = "Despesa";
+                    Valor = Math.Abs(LancamentoEditar.Valor);
+                }
+                else
+                {
+                    TipoSelecionado = "Receita";
+                    Valor = LancamentoEditar.Valor;
+                }
+
+                // Pré-seleciona a categoria baseada no ID (DTO precisa ter CategoriaId)
+                if (categorias != null)
+                {
+                    _categoriaSelecionada = categorias.FirstOrDefault(c => c.Id == LancamentoEditar.CategoriaId);
+                }
+            }
+            else
+            {
+                // --- MODO CRIAÇÃO ---
+                // Seleciona a primeira categoria automaticamente (UX)
+                if (categorias != null && categorias.Any())
+                {
+                    OnCategoriaChanged(categorias.First());
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Erro ao carregar dados.", Severity.Warning);
+        }
+    }
+
+    private void OnCategoriaChanged(CategoriaDto categoria)
+    {
+        _categoriaSelecionada = categoria;
+        // Só muda o tipo automaticamente se for CRIAÇÃO. Na edição, respeitamos o que veio do banco.
+        if (categoria != null && LancamentoEditar == null)
+        {
+            TipoSelecionado = categoria.Tipo;
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    async Task Submit()
+    {
+        if (Valor <= 0)
+        {
+            Snackbar.Add("O valor deve ser maior que zero.", Severity.Warning);
+            return;
+        }
+
+        // Validação de categoria só se for criação (na edição ela pode vir nula se não mudarmos, mas visualmente está disabled)
+        if (LancamentoEditar == null && _categoriaSelecionada == null)
+        {
+            Snackbar.Add("Selecione uma categoria.", Severity.Warning);
+            return;
+        }
+
+        _processando = true;
+
+        try
+        {
+            decimal valorFinal = TipoSelecionado == "Despesa" ? Math.Abs(Valor) * -1 : Math.Abs(Valor);
+
+            if (LancamentoEditar == null)
+            {
+                // POST: Criar
+                var command = new
+                {
+                    Descricao = Descricao,
+                    Valor = valorFinal,
+                    DataVencimento = DataVencimento ?? DateTime.Now,
+                    ContaId = ContaId,
+                    CategoriaId = _categoriaSelecionada!.Id
+                };
+                var response = await Http.PostAsJsonAsync("api/lancamentos", command);
+                if (response.IsSuccessStatusCode) MudDialog.Close(DialogResult.Ok(true));
+                else Snackbar.Add("Erro ao criar.", Severity.Error);
+            }
+            else
+            {
+                // PUT: Editar (Usa a estrutura do seu Command C#)
+                var command = new
+                {
+                    Id = LancamentoEditar.Id,
+                    Descricao = Descricao,
+                    Valor = valorFinal,
+                    DataVencimento = DataVencimento ?? DateTime.Now
+                    // Note: Não enviamos CategoriaId nem ContaId, pois o backend ignora/não permite
+                };
+
+                var response = await Http.PutAsJsonAsync($"api/lancamentos/{LancamentoEditar.Id}", command);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Atualizado com sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add("Erro ao atualizar.", Severity.Error);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processando = false;
+        }
+    }
+}

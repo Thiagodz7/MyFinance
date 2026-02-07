@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MyFinance.Application.Commands;
+using MyFinance.Application.Queries;
 
 namespace MyFinance.API.Controllers
 {
@@ -34,8 +35,33 @@ namespace MyFinance.API.Controllers
             }
             catch (Exception ex)
             {
-                return NotFound(ex.Message); 
+                return NotFound(ex.Message);
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] AlterarLancamentoCommand command)
+        {
+            if (id != command.Id) return BadRequest("IDs não conferem");
+            try
+            {
+                await _mediator.Send(command);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var resultado = await _mediator.Send(new ObterLancamentoPorIdQuery(id));
+
+            if (resultado == null) return NotFound();
+
+            return Ok(resultado);
         }
     }
 }

@@ -39,7 +39,7 @@ else
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="AbrirDialog">
+                   OnClick="@(() => AbrirDialog(null))">
             Novo Lançamento
         </MudButton>
     </div>
@@ -65,6 +65,10 @@ else
                 </MudText>
             </MudTd>
             <MudTd DataLabel="Ações">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Color="Color.Warning"
+                               OnClick="@(() => AbrirDialog(context))" />
+
                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                Color="Color.Error"
                                OnClick="@(() => ConfirmarExclusao(context.Id))" />
@@ -77,22 +81,28 @@ else
     private ExtratoDto? extrato;
     private bool _carregando = true;
 
-    private async Task AbrirDialog()
+    private async Task AbrirDialog(LancamentoDto? lancamentoParaEditar = null)
     {
-        if (extrato == null) return; // Segurança
+        if (extrato == null) return;
 
         var parameters = new DialogParameters();
-        parameters.Add("ContaId", extrato.ContaId); // Passando o parâmetro pro Modal
+        parameters.Add("ContaId", extrato.ContaId);
+
+        // Passa o objeto se for edição (ou null se for criação)
+        parameters.Add("LancamentoEditar", lancamentoParaEditar);
+
+        var title = lancamentoParaEditar == null ? "Novo Lançamento" : "Editar Lançamento";
 
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 
-        var dialog = await DialogService.ShowAsync<NovoLancamentoDialog>("Novo Lançamento", parameters, options);
+        var dialog = await DialogService.ShowAsync<LancamentoDialog>(title, parameters, options);
         var result = await dialog.Result;
 
-        if (!result.Canceled)
+        if (!result!.Canceled)
         {
-            // Se salvou, recarrega o extrato para ver o saldo mudar e o item aparecer
+            // Recarrega lista e atualiza cabeçalho global
             await CarregarExtrato();
+            FinanceState.SetAccount(FinanceState.SelectedAccountId, FinanceState.SelectedAccountName);
         }
     }
 

@@ -51,5 +51,10 @@ namespace MyFinance.Infrastructure.Repositories
         {
             return await _context.Lancamentos.FirstOrDefaultAsync(c => c.Id == id);
         }
+
+        public void Update(Lancamento lancamento)
+        {
+            _context.Lancamentos.Update(lancamento);
+        }
     }
 }

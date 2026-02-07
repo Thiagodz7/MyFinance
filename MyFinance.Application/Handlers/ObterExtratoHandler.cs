@@ -41,7 +41,9 @@ namespace MyFinance.Application.Handlers
                     Valor = l.Valor,
                     Categoria = l.Categoria?.Nome ?? "Sem Categoria",
                     Data = l.DataVencimento,
-                    Tipo = l.Valor >= 0 ? "Receita" : "Despesa" // Lógica simples de visualização
+                    Tipo = l.Valor >= 0 ? "Receita" : "Despesa",
+                    CategoriaId = l.CategoriaId,
+                    ContaId = l.ContaId
                 }).ToList()
             };
         }

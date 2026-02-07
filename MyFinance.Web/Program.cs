@@ -13,6 +13,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configura o HttpClient para apontar para o Docker (localhost:8080)
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://localhost:8080/") });
+
 builder.Services.AddScoped<PageStateService>();
 builder.Services.AddScoped<FinanceStateService>();
 

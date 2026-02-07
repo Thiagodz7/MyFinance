@@ -43,24 +43,13 @@
             Pago = false;
         }   
 
-
         public void MarcarComoPago() => Pago = true;
 
-
-        //Construtor antes da Refatoração
-        //public Lancamento(string descricao, decimal valor, DateTime dataVencimento)
-        //{
-        //    // Validação simples (Regra de Domínio)
-        //    if (string.IsNullOrEmpty(descricao))
-        //        throw new Exception("Descrição é obrigatória");
-
-        //    if (valor == 0)
-        //        throw new Exception("O valor não pode ser zero");
-
-        //    Descricao = descricao;
-        //    Valor = valor;
-        //    DataVencimento = dataVencimento;
-        //    Pago = false;
-        //}
+        public void Atualizar(string descricao, decimal valor, DateTime dtVencimento)
+        {
+            Descricao = descricao;
+            Valor = valor;  
+            DataVencimento = dtVencimento;
+        }
     }
 }
