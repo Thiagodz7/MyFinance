@@ -107,19 +107,17 @@ else
         {
             _carregando = true;
 
-            // LÓGICA CORRIGIDA:
-            // Prioriza o ID selecionado no Global State. Se for nulo, busca a primeira.
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
 
             if (idParaBuscar == null)
             {
-                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
-                if (contas != null && contas.Any())
-                {
-                    idParaBuscar = contas.Where(c => c.Ativo).Last().Id;
-                    // Opcional: Já define essa como a conta ativa no estado global
-                    // FinanceState.SetAccount(idParaBuscar, contas.First().Nome);
-                }
+                idParaBuscar = Guid.Parse("18ecbf59-2f36-446d-8566-86f8b10926bf");
+                FinanceState.SetAccount(Guid.Parse("18ecbf59-2f36-446d-8566-86f8b10926bf"), "Padrão");
+                // var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
+                // if (contas != null && contas.Any())
+                // {
+                //     idParaBuscar = contas.Where(c => c.Ativo).Last().Id;
+                // }
             }
 
             if (idParaBuscar != null)
