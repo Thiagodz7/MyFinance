@@ -37,15 +37,13 @@ namespace MyFinance.API.Controllers
             if (id != command.Id) return BadRequest("IDs não conferem");
 
             await _mediator.Send(command);
-            return NoContent(); // 204 No Content (Padrão para Update)
+            return NoContent(); 
         }
 
-        [HttpPatch("{id}/status")] // <--- O verbo correto para "Remendar" o dado
+        [HttpPatch("{id}/status")] 
         public async Task<IActionResult> PatchStatus(Guid id, [FromBody] AlterarStatusDto dto)
         {
-            // Dica: Receber um objeto DTO (mesmo que simples) é melhor que um tipo primitivo (bool)
-            // porque JSONs válidos geralmente são objetos { "ativo": true } e não apenas true solto.
-            var command = new AlterarStatusContaCommand { Id = id, Ativo = dto.Ativo };
+            var command = new AlterarStatusCategoriaCommand { Id = id, Ativo = dto.Ativo };
             await _mediator.Send(command);
             return NoContent();
         }

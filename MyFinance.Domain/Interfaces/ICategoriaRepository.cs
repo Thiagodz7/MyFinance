@@ -7,7 +7,7 @@ namespace MyFinance.Domain.Interfaces
         Task<Categoria?> GetByIdAsync(Guid id);
         Task<IEnumerable<Categoria>> GetAllAsync();
         Task AddAsync(Categoria categoria); 
-        Task UpdateAsync(Guid id, Categoria conta, CancellationToken cancellationToken);
+        Task UpdateAsync(Guid id, Categoria categoria, CancellationToken cancellationToken);
         void Update(Categoria categoria);
         void Delete(Categoria categoria);
     }

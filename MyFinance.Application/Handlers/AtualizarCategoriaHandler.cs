@@ -28,7 +28,7 @@ namespace MyFinance.Application.Handlers
             categoria.Atualizar(request.Nome, request.Tipo);
 
             // Marca como modificado no EF
-            _repository.Update(categoria);
+            await _repository.UpdateAsync(request.Id, categoria, cancellationToken);
 
             // Persiste no Banco
             await _uow.CommitAsync();

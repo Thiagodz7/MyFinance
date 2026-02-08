@@ -4,7 +4,7 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="Model.Nome" Label="Nome" />
+        <MudTextField @bind-Value="Nome" Label="Nome" />
 
         <MudSelect T="int" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter">
             <MudSelectItem Value="0">Receita</MudSelectItem>
@@ -34,41 +34,67 @@
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    public CategoriaDto Model { get; set; } = new();
+    [Parameter] public CategoriaDto? Model { get; set; }
     public int TipoSelecionado { get; set; } = 1;
-
-    // Variável para controlar o estado do botão
+    public string Nome { get; set; } = string.Empty;
+    public string Tipo { get; set; } = string.Empty;
     private bool _processando = false;
+
+    protected override void OnInitialized()
+    {
+        if (Model != null)
+        {
+            // Modo Edição
+            Nome = Model.Nome;
+            Tipo = Model.Tipo;
+            TipoSelecionado = Model.Tipo == "Receita" ? 0 : 1;
+        }
+    }
 
     void Cancel() => MudDialog.Cancel();
 
     async Task Submit()
     {
-        // 1. Trava o botão imediatamente
         _processando = true;
-        StateHasChanged(); // Força a tela a atualizar para mostrar o loading
+        StateHasChanged();
 
         try
         {
-            var command = new
-            {
-                Nome = Model.Nome,
-                Tipo = TipoSelecionado
-            };
 
-            var response = await Http.PostAsJsonAsync("api/categorias", command);
+            string tipoConvertido = TipoSelecionado == 0 ? "Receita" : "Despesa";
 
-            if (response.IsSuccessStatusCode)
+            if (Model == null)
             {
-                Snackbar.Add("Sucesso!", Severity.Success);
-                MudDialog.Close(DialogResult.Ok(true));
+                var command = new { Nome, Tipo = TipoSelecionado };
+
+                var response = await Http.PostAsJsonAsync("api/categorias", command);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Sucesso!", Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add("Erro ao salvar!", Severity.Error);
+                    _processando = false;
+                }
             }
             else
             {
-                Snackbar.Add("Erro ao salvar!", Severity.Error);
-                // Se der erro, destrava o botão para o usuário tentar de novo
-                _processando = false;
+                // --- EDIÇÃO (PUT) ---
+                var commandEditar = new { Id = Model.Id, Nome, Tipo = TipoSelecionado };
+                var response = await Http.PutAsJsonAsync($"api/categorias/{Model.Id}", commandEditar);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Categoria atualizada!", Severity.Success);
+
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else Snackbar.Add("Erro ao atualizar.", Severity.Error);
             }
+
         }
         catch (Exception ex)
         {

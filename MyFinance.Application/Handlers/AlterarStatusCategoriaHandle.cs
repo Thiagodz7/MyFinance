@@ -26,7 +26,7 @@ namespace MyFinance.Application.Handlers
 
             categoria.AlterarStatus(request.Ativo);
 
-            await _repository.UpdateAsync(categoria.Id, categoria, cancellationToken);
+            await _repository.UpdateAsync(request.Id, categoria, cancellationToken);
             await _uow.CommitAsync();
 
             return Unit.Value;

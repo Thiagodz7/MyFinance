@@ -90,14 +90,13 @@
         try
         {
             categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
+            categorias = categorias?.Where(c => c.Ativo).OrderBy(c => c.Nome).ToList();
 
             if (LancamentoEditar != null)
             {
-                // --- MODO EDIÇÃO ---
                 Descricao = LancamentoEditar.Descricao;
                 DataVencimento = LancamentoEditar.Data;
 
-                // Converte valor negativo para positivo visual e ajusta o Tipo
                 if (LancamentoEditar.Valor < 0)
                 {
                     TipoSelecionado = "Despesa";
