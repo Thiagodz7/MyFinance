@@ -3,6 +3,9 @@
 @inject HttpClient Http
 @inject FinanceStateService FinanceState
 
+@inject PageStateService PageState
+@implements IDisposable
+
 <MudSelect T="Guid?"
            Label="Conta Ativa"
            Value="FinanceState.SelectedAccountId"
@@ -30,7 +33,30 @@
     protected override async Task OnInitializedAsync()
     {
         // Busca as contas que você já tem cadastradas no banco
-        _contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+        await CarregarContas();
+
+        PageState.OnCreateNewContaChanged += HandleContasChanged;
+    }
+
+    private async void HandleContasChanged()
+    {
+        await CarregarContas();
+        StateHasChanged();
+    } 
+
+    public void Dispose()
+    {
+        PageState.OnCreateNewContaChanged -= HandleContasChanged;
+    }
+
+    private async Task CarregarContas()
+    {
+        var todasContas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+
+        if (todasContas != null)
+        {
+            _contas = todasContas.Where(c => c.Ativo).ToList();
+        }
     }
 
     private void OnAccountSelected(Guid? id)

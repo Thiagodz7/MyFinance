@@ -1,9 +1,11 @@
 ﻿@page "/contas"
 @using MyFinance.Web.DTOs
-@using MyFinance.Web.Pages
+@using MyFinance.Web.Services
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
+@inject ISnackbar Snackbar
+@inject FinanceStateService FinanceState
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
 
@@ -12,42 +14,62 @@
             <MudText Typo="Typo.h5" Class="fw-bold">Minhas Contas</MudText>
             <MudText Typo="Typo.body2" Color="Color.Secondary">Gerencie seus saldos e bancos</MudText>
         </div>
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="AbrirNovaContaDialog">
-            Nova Conta
-        </MudButton>
+
+        <MudStack Row="true">
+            @* Filtro Visual Opcional *@
+            <MudCheckBox T="bool" Value="@_mostrarInativos" ValueChanged="@((bool v) => AlternarFiltro(v))" Label="Mostrar Inativos" Color="Color.Default" Dense="true" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="@(() => AbrirDialog())">
+                Nova Conta
+            </MudButton>
+        </MudStack>
     </div>
 
     @if (_contas == null)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
     }
-    else if (!_contas.Any())
+    else if (!_contasFiltered.Any())
     {
         <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
-            Você ainda não cadastrou nenhuma conta. Clique no botão acima para começar!
+            Nenhuma conta encontrada.
         </MudAlert>
     }
     else
     {
         <MudGrid>
-            @foreach (var conta in _contas)
+            @foreach (var conta in _contasFiltered)
             {
                 <MudItem xs="12" sm="6" md="4">
-                    <MudPaper Elevation="2" Class="pa-4 d-flex flex-column gap-2" Style="border-radius: 12px; border-left: 6px solid var(--mud-palette-secondary);">
+                    @* Estilização visual para contas INATIVAS *@
+                    <MudPaper Elevation="@(conta.Ativo ? 2 : 0)"
+                              Class="pa-4 d-flex flex-column gap-2 position-relative"
+                              Style="@($"border-radius: 12px; border-left: 6px solid {(conta.Ativo ? "var(--mud-palette-secondary)" : "gray")}; {(conta.Ativo ? "" : "background-color: #f5f5f5; opacity: 0.8;")}")">
 
                         <div class="d-flex justify-space-between align-center">
-                            <MudText Typo="Typo.subtitle1" Class="fw-bold">@conta.Nome</MudText>
-                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Color="Color.Default" />
+                            <MudText Typo="Typo.subtitle1" Class="fw-bold" Color="@(conta.Ativo? Color.Default: Color.Secondary)">
+                                @conta.Nome @(conta.Ativo ? "" : "(Inativa)")
+                            </MudText>
+
+                            @* Menu de Ações no Card *@
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="@(() => AbrirDialog(conta))">Editar</MudMenuItem>
+                                <MudMenuItem Icon="@(conta.Ativo? Icons.Material.Filled.PowerSettingsNew : Icons.Material.Filled.Refresh)"
+                                             IconColor="@(conta.Ativo ? Color.Error : Color.Success)"
+                                             OnClick="@(() => AlternarStatusConta(conta))">
+                                    @(conta.Ativo ? "Inativar" : "Reativar")
+                                </MudMenuItem>
+                            </MudMenu>
                         </div>
 
                         <MudText Typo="Typo.caption" Style="color: #64748B;">@conta.Banco</MudText>
 
                         <MudDivider Class="my-2" />
 
-                        <MudText Typo="Typo.h5" Color="Color.Success" Class="fw-bold">
+                        <MudText Typo="Typo.h5" Color="@(conta.Ativo? Color.Success: Color.Default)" Class="fw-bold">
                             @conta.SaldoAtual.ToString("C")
                         </MudText>
 
@@ -61,6 +83,8 @@
 
 @code {
     private List<ContaDto>? _contas;
+    private IEnumerable<ContaDto> _contasFiltered => _mostrarInativos ? _contas : _contas?.Where(c => c.Ativo);
+    private bool _mostrarInativos = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -72,25 +96,82 @@
     {
         try
         {
+            // O Backend já foi corrigido para mandar o campo 'Ativo'
             _contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Em produção, logaríamos o erro
+            Snackbar.Add($"Erro ao carregar contas: {ex.Message}", Severity.Error);
         }
     }
 
-    private async Task AbrirNovaContaDialog()
+    private void AlternarFiltro(bool mostrar)
     {
+        _mostrarInativos = mostrar;
+    }
+
+    private async Task AbrirDialog(ContaDto? conta = null)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("ContaEditar", conta);
+
+        var title = conta == null ? "Nova Conta" : "Editar Conta";
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
 
-        var dialog = await DialogService.ShowAsync<NovaContaDialog>("Nova Conta Bancária", options);
+        // ATENÇÃO: Renomeie seu arquivo de NovaContaDialog para ContaDialog
+        var dialog = await DialogService.ShowAsync<ContaDialog>(title, parameters, options);
         var result = await dialog.Result;
 
         if (!result.Canceled)
         {
-            // Se o usuário criou a conta, recarregamos a lista
             await CarregarContas();
+            // Atualiza o seletor global, caso tenha mudado o nome da conta selecionada
+            if (conta != null && conta.Id == FinanceState.SelectedAccountId){}
+        }
+    }
+
+    private async Task AlternarStatusConta(ContaDto conta)
+    {
+        string acao = conta.Ativo ? "inativar" : "reativar";
+        bool novoStatus = !conta.Ativo;
+
+        // Confirmação
+        bool? result = await DialogService.ShowMessageBox(
+            "Confirmação",
+            $"Deseja realmente {acao} a conta '{conta.Nome}'?",
+            yesText: "Sim", cancelText: "Cancelar");
+
+        if (result != true) return;
+
+        try
+        {
+            // Chamada PATCH que definimos anteriormente
+            // Body: { "Ativo": true/false }
+            var body = new { Ativo = novoStatus };
+
+            var response = await Http.PatchAsJsonAsync($"api/contas/{conta.Id}/status", body);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add($"Conta {acao}da com sucesso!", Severity.Success);
+                await CarregarContas();
+
+                // Se inativou a conta que estava selecionada no Header, deveríamos limpar a seleção
+                if (conta.Id == FinanceState.SelectedAccountId && novoStatus == false)
+                {                 
+                    FinanceState.SetAccount(null, "Todas as Contas");
+                }
+
+                PageState.NotifyCreateNewContaChanged();
+            }
+            else
+            {
+                Snackbar.Add($"Erro ao {acao} conta.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
         }
     }
 }

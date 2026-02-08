@@ -36,6 +36,12 @@ namespace MyFinance.Infrastructure.Repositories
             _context.Categorias.Update(categoria);
         }
 
+        public Task UpdateAsync(Guid id, Categoria categoria, CancellationToken ct)
+        {
+            _context.Categorias.Update(categoria);
+
+            return Task.CompletedTask;
+        }
         public void Delete(Categoria categoria)
         {
             _context.Categorias.Remove(categoria);

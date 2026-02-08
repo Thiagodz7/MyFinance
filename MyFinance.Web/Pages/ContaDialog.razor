@@ -1,0 +1,145 @@
+﻿@using MyFinance.Web.DTOs
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject MyFinance.Web.Services.PageStateService PageState
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            @(ContaEditar == null
+                        ? "Cadastre suas contas para separar suas finanças."
+                        : "Atualize os dados da sua conta bancária.")
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Nome"
+                              Label="Nome da Conta"
+                              Placeholder="Ex: NuConta Principal"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Label" />
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudTextField @bind-Value="Banco"
+                              Label="Instituição / Banco"
+                              Placeholder="Ex: Nubank"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.AccountBalance" />
+            </MudItem>
+
+            <MudItem xs="12">
+                @* REGRA DE OURO: Saldo só se define na criação. Depois, só via lançamentos. *@
+                <MudNumericField @bind-Value="SaldoInicial"
+                                 Label="@(ContaEditar == null ? "Saldo Inicial" : "Saldo Atual (Bloqueado)")"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Adornment="Adornment.Start"
+                                 AdornmentText="R$"
+                                 Format="N2"
+                                 Disabled="@(ContaEditar != null)"
+                                 HelperText="@(ContaEditar == null ? "Quanto tem lá hoje?" : "Para ajustar o saldo, crie um lançamento.")" />
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Disabled="_processando">
+            @if (_processando)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Processando...</MudText>
+            }
+            else
+            {
+                <MudText>@(ContaEditar == null ? "Criar Conta" : "Salvar Alterações")</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public ContaDto? ContaEditar { get; set; }
+
+    // Campos do Formulário
+    public string Nome { get; set; } = string.Empty;
+    public string Banco { get; set; } = string.Empty;
+    public decimal SaldoInicial { get; set; }
+
+    private bool _processando = false;
+
+    protected override void OnInitialized()
+    {
+        if (ContaEditar != null)
+        {
+            // Modo Edição
+            Nome = ContaEditar.Nome;
+            Banco = ContaEditar.Banco;
+            SaldoInicial = ContaEditar.SaldoAtual; // Apenas para visualização
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+
+    async Task Submit()
+    {
+        if (string.IsNullOrWhiteSpace(Nome) || string.IsNullOrWhiteSpace(Banco))
+        {
+            Snackbar.Add("Preencha Nome e Banco.", Severity.Warning);
+            return;
+        }
+
+        _processando = true;
+
+        try
+        {
+            if (ContaEditar == null)
+            {
+                // --- CRIAÇÃO (POST) ---
+                var command = new { Nome, Banco, SaldoInicial };
+                var response = await Http.PostAsJsonAsync("api/contas", command);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Conta criada!", Severity.Success);
+
+                    PageState.NotifyCreateNewContaChanged();
+
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else Snackbar.Add("Erro ao criar conta.", Severity.Error);
+            }
+            else
+            {
+                // --- EDIÇÃO (PUT) ---
+                var command = new { Id = ContaEditar.Id, Nome, Banco };
+                var response = await Http.PutAsJsonAsync($"api/contas/{ContaEditar.Id}", command);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Snackbar.Add("Conta atualizada!", Severity.Success);
+
+                    PageState.NotifyCreateNewContaChanged();
+
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else Snackbar.Add("Erro ao atualizar.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _processando = false;
+        }      
+    }
+}

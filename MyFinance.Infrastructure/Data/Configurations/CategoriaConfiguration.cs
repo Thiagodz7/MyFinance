@@ -15,6 +15,9 @@ namespace MyFinance.Infrastructure.Data.Configurations
                    .HasMaxLength(50);
             builder.Property(c => c.Tipo)
                    .IsRequired();
+            builder.Property(c => c.Ativo)
+                   .IsRequired()
+                   .HasDefaultValue(true);
         }
     }
 }

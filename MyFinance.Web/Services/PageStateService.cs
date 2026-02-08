@@ -1,4 +1,7 @@
 ﻿// MyFinance.Web/Services/PageStateService.cs
+using MyFinance.Web.DTOs;
+using static System.Net.WebRequestMethods;
+
 namespace MyFinance.Web.Services
 {
     public class PageStateService
@@ -8,6 +11,7 @@ namespace MyFinance.Web.Services
 
         // Evento que avisa os interessados que o título mudou
         public event Action? OnTitleChanged;
+        public event Action? OnCreateNewContaChanged;
 
         public void SetTitle(string newTitle)
         {
@@ -17,6 +21,10 @@ namespace MyFinance.Web.Services
                 // Dispara o evento de notificação
                 OnTitleChanged?.Invoke();
             }
+        }
+        public void NotifyCreateNewContaChanged()
+        {          
+            OnCreateNewContaChanged?.Invoke();
         }
     }
 }

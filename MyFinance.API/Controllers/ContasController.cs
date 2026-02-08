@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MyFinance.Application.Commands;
+using MyFinance.Application.DTOs;
 using MyFinance.Application.Queries;
 
 namespace MyFinance.API.Controllers
@@ -40,6 +41,21 @@ namespace MyFinance.API.Controllers
         {
             var id = await _mediator.Send(command);
             return Ok(new { Id = id });
+        }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> PatchStatus(Guid id, [FromBody] AlterarStatusDto dto)
+        {
+            var command = new AlterarStatusContaCommand { Id = id, Ativo = dto.Ativo };
+            await _mediator.Send(command);
+            return NoContent();
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(Guid id, [FromBody] AlterarContaCommand command)
+        {
+            await _mediator.Send(command);
+            return NoContent();
         }
     }
 }

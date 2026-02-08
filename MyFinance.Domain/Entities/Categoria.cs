@@ -4,6 +4,7 @@
     {
         public string Nome { get; private set; } = string.Empty;
         public TipoCategoria Tipo { get; set; }
+        public bool Ativo { get; private set; }
 
         public Categoria(string nome, TipoCategoria tipo)
         {
@@ -15,6 +16,7 @@
 
             Nome = nome;
             Tipo = tipo;
+            Ativo = true;
         }
 
         public void Atualizar(string nome, TipoCategoria tipo)
@@ -23,7 +25,12 @@
             Tipo = tipo;
         }
 
-        protected Categoria() { } // Construtor protegido para EF Core
+        public void AlterarStatus(bool ativo)
+        {
+            Ativo = ativo;
+        }
+
+        protected Categoria() { } 
     }
 
     public enum TipoCategoria

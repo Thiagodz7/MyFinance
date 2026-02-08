@@ -18,12 +18,20 @@ namespace MyFinance.Application.Handlers
         {
             var categorias = await _repository.GetAllAsync();
 
-            return categorias.Select(c => new CategoriaDto
+            var listaCategoriasDto = categorias.Select(c => new CategoriaDto
             {
                 Id = c.Id,
                 Nome = c.Nome,
-                Tipo = c.Tipo.ToString() // Converte o Enum para String
+                Tipo = c.Tipo.ToString(),
+                Ativo = c.Ativo 
             });
+
+             if (request.ApenasAtivos)
+             {
+                 listaCategoriasDto.Where(c => c.Ativo);
+             }
+
+             return listaCategoriasDto;
         }
     }
 }

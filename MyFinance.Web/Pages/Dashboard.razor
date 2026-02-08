@@ -116,7 +116,7 @@ else
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
                 if (contas != null && contas.Any())
                 {
-                    idParaBuscar = contas.Last().Id;
+                    idParaBuscar = contas.Where(c => c.Ativo).Last().Id;
                     // Opcional: Já define essa como a conta ativa no estado global
                     // FinanceState.SetAccount(idParaBuscar, contas.First().Nome);
                 }

@@ -18,13 +18,21 @@ namespace MyFinance.Application.Handlers
         {
             var contas = await _repository.GetAllAsync();
 
-            return contas.Select(c => new ContaDto
+            var listaContasDto = contas.Select(c => new ContaDto
             {
                 Id = c.Id,
                 Nome = c.Nome,
                 Banco = c.Banco,
-                SaldoAtual = c.SaldoAtual
+                SaldoAtual = c.SaldoAtual,
+                Ativo = c.Ativo
             });
+
+            if (request.ApenasAtivos)
+            {
+                listaContasDto.Where(c => c.Ativo);
+            }
+
+            return listaContasDto;
         }
     }
 }

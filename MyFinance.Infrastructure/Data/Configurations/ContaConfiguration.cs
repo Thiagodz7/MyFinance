@@ -13,6 +13,9 @@ namespace MyFinance.Infrastructure.Data.Configurations
             builder.Property(c => c.Nome).IsRequired().HasMaxLength(50);
             builder.Property(c => c.Banco).IsRequired().HasMaxLength(100);
             builder.Property(c => c.SaldoAtual).HasPrecision(18, 2);
+            builder.Property(c => c.Ativo)
+                   .IsRequired()
+                   .HasDefaultValue(true);
         }
     }
 }
