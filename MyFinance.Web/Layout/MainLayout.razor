@@ -31,7 +31,8 @@
         <MudNavMenu Class="mt-4" Color="Color.Secondary">
             <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
             <MudNavLink Href="/lancamentos" Icon="@Icons.Material.Filled.List">Lançamentos</MudNavLink>
-            <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.PieChart">Relatórios</MudNavLink>
+            <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.PieChart" Disabled="true">Relatórios</MudNavLink>
+
             @if (_drawerOpen)
             {
                 <MudText Typo="Typo.subtitle2" Class="px-4 mt-6 mb-2" Style="color: #64748B;">CONFIGURAÇÕES</MudText>
