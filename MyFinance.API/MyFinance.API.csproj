@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.3" />
     <PackageReference Include="MediatR" Version="14.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.12">
@@ -21,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyFinance.Application\MyFinance.Application.csproj" />
+    <ProjectReference Include="..\MyFinance.Identity\MyFinance.Identity.csproj" />
     <ProjectReference Include="..\MyFinance.Infrastructure\MyFinance.Infrastructure.csproj" />
   </ItemGroup>
 

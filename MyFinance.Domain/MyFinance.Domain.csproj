@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Entities\UsuarioEntitdades\Usuario.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Entities\UsuarioEntitdades\" />
+  </ItemGroup>
+
 </Project>

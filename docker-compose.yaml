@@ -36,6 +36,12 @@ services:
       # API também precisa saber onde está o banco e o rabbit
       - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
       - RabbitMQ__Host=myfinance_bus
+
+      # JWT Settings (Segredo, Emissor, Público)
+      - JwtSettings__Segredo=${JWT_SECRET}
+      - JwtSettings__Emissor=${JWT_ISSUER}
+      - JwtSettings__Publico=${JWT_AUDIENCE}
+
       # Permite o Scalar funcionar em Produção (Docker é considerado Prod as vezes)
       - ASPNETCORE_ENVIRONMENT=Development 
     depends_on:

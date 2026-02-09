@@ -1,11 +1,17 @@
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using MyFinance.Application.Commands;
 using MyFinance.Domain.Interfaces;
+using MyFinance.Identity;
+using MyFinance.Identity.SecurityContext;
 using MyFinance.Infrastructure;
 using MyFinance.Infrastructure.Data;
 using MyFinance.Infrastructure.Repositories;
 using Scalar.AspNetCore;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +28,41 @@ builder.Services.AddDbContext<AppDbContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(10),
             errorNumbersToAdd: null);
     }));
+
+builder.Services
+    .AddIdentity<ApplicationUser, IdentityRole>() 
+    .AddEntityFrameworkStores<SecurityDbContext>()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddDbContext<SecurityDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"), // Usa o mesmo banco
+        b => b.MigrationsAssembly("MyFinance.Identity") // <--- O PULO DO GATO!
+    ));
+
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var chave = Encoding.ASCII.GetBytes(jwtSettings["Segredo"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    // Aqui dizemos: "O padrão é JWT, não use Cookie!"
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false; // Em dev pode ser false
+    options.SaveToken = true;
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(chave),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings["Emissor"],
+        ValidateAudience = true,
+        ValidAudience = jwtSettings["Publico"]
+    };
+});
+
 // -----------------------------------------------------------
 
 builder.Services.AddScoped<ILancamentoRepository, LancamentoRepository>();
@@ -86,6 +127,9 @@ app.UseHttpsRedirection();
 
 // 2. Ative o Middleware de CORS (Logo no começo do pipeline)
 app.UseCors("AllowAll");
+
+app.UseAuthentication(); 
+app.UseAuthorization();
 
 app.MapControllers(); // Importante: Garanta que esta linha existe para mapear seu Controller!
 
