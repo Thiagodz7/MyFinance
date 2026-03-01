@@ -29,17 +29,18 @@ builder.Services.AddMassTransit(x =>
     // 2. Configura a conexão com RabbitMQ
     x.UsingRabbitMq((context, cfg) =>
     {
-        // Tenta ler a variável de ambiente RABBITMQ_HOST. Se não tiver, usa localhost.
+        // Lê do appsettings (local) ou das variáveis de ambiente do Docker (produção)
         var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "admin";
+        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "SuaSenhaForteRabbit!";
 
         cfg.Host(rabbitHost, "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
         });
 
         // 3. O Pulo do Gato: ReceiveEndpoint
-        // Isso cria a FILA "fila-lancamentos" lá no RabbitMQ automaticamente
         cfg.ReceiveEndpoint("fila-lancamentos", e =>
         {
             e.ConfigureConsumer<LancamentoCriadoConsumer>(context);
