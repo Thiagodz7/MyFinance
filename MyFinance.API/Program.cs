@@ -84,10 +84,15 @@ builder.Services.AddMassTransit(x =>
     {
         // A conexão padrão do Docker: localhost na porta 5672
         // Se você mudou a senha no docker-compose, ajuste aqui!
+        // Lê do appsettings (local) ou das variáveis de ambiente do Docker (produção)
+        var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
+        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
+
         cfg.Host(rabbitHost, "/", h =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            h.Username(rabbitUser);
+            h.Password(rabbitPass);
         });
 
         // Melhora a serialização do JSON
