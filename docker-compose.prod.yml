@@ -40,8 +40,11 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443" # Agora abrimos a porta do HTTPS!
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      # Mágica aqui: mapeando os certificados do Linux para o Docker
+      - /etc/letsencrypt:/etc/letsencrypt:ro 
     depends_on:
       - web
       - api
