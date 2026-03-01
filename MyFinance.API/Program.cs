@@ -1,5 +1,6 @@
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -160,6 +161,15 @@ builder.Services.AddCors(options =>
         });
 });
 
+//Quando quiser limitar o acesso
+//builder.Services.AddCors(options => {
+//    options.AddPolicy("ProductionPolicy", builder => {
+//        builder.WithOrigins("https://myfinancesxls.tech") 
+//               .AllowAnyHeader()
+//               .AllowAnyMethod();
+//    });
+//});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -199,6 +209,11 @@ app.UseHttpsRedirection();
 
 // 2. Ative o Middleware de CORS (Logo no começo do pipeline)
 app.UseCors("AllowAll");
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 app.UseAuthentication(); 
 app.UseAuthorization();
