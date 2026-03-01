@@ -172,6 +172,29 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+//Cria o banco e as tabelas se não existirem
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // 1. Migra as tabelas de Finanças (Contas, Lançamentos, etc)
+        var context = services.GetRequiredService<AppDbContext>();
+        context.Database.Migrate();
+
+        // 2. Migra as tabelas de Segurança (Usuários, Logins, Roles)
+        var securityContext = services.GetRequiredService<SecurityDbContext>();
+        securityContext.Database.Migrate();
+
+        Console.WriteLine("--> Migrations aplicadas com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocorreu um erro ao aplicar as migrations no banco de dados.");
+    }
+}
+
 app.UseHttpsRedirection();
 
 // 2. Ative o Middleware de CORS (Logo no começo do pipeline)
