@@ -1,6 +1,8 @@
-﻿namespace MyFinance.Domain.Entities
+﻿using MyFinance.Domain.Interfaces;
+
+namespace MyFinance.Domain.Entities
 {
-    public class Lancamento : BaseEntity
+    public class Lancamento : BaseEntity, IEntityComDono
     {
         // Propriedades "private set" para garantir encapsulamento. 
         // Ninguém muda o valor "de fora" sem passar pelo construtor ou método.
@@ -18,7 +20,7 @@
         public Guid CategoriaId { get; private set; }
 
         public Categoria Categoria { get; private set; }
-
+        public string UserId { get; private set; } = string.Empty;
         //Construtor após a Refatoração para incluir ContaId
         // [ATUALIZADO] Adicione contaId no construtor
         public Lancamento(string descricao, decimal valor, DateTime dataVencimento, Guid contaId, Guid categoriaId)
@@ -50,6 +52,14 @@
             Descricao = descricao;
             Valor = valor;  
             DataVencimento = dtVencimento;
+        }
+
+        public void AssociarUsuario(string userId)
+        {
+            if (string.IsNullOrEmpty(UserId))
+            {
+                UserId = userId;
+            }
         }
     }
 }

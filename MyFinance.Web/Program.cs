@@ -1,9 +1,13 @@
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor;
 using MudBlazor.Services;
 using MyFinance.Web;
+using MyFinance.Web.Auth;
 using MyFinance.Web.Services;
+using MyFinance.Web.Services.Auth;
+using MyFinance.Web.Services.LocalStorage;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -16,6 +20,14 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://
 
 builder.Services.AddScoped<PageStateService>();
 builder.Services.AddScoped<FinanceStateService>();
+builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
+
+// 2. Registre nosso provedor customizado
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// 1. Adicione suporte a Autorização (Essencial)
+builder.Services.AddAuthorizationCore();
 
 
 // Testar No Celular

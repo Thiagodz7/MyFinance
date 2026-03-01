@@ -1,0 +1,55 @@
+name: CI/CD Pipeline - MyFinance
+
+# Quando esse robô deve acordar? Quando houver um push na branch main!
+on:
+  push:
+    branches: [ "master" ]
+  workflow_dispatch: # Permite rodar o script manualmente clicando num botão no GitHub
+
+jobs:
+  # TAREFA 1: Compilar e Empacotar (Build & Push)
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código do repositório
+        uses: actions/checkout@v3
+
+      - name: Fazer Login no Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build e Push da API
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./MyFinance.API/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/myfinance-api:latest
+
+      - name: Build e Push do Worker
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./MyFinance.Worker/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/myfinance-worker:latest
+
+  # TAREFA 2: Atualizar o Servidor (Deploy)
+  deploy:
+    needs: build-and-push # Só roda se a tarefa 1 der certo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acessar a Hostinger via SSH e Atualizar
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd /opt/myfinance
+            # Baixa as imagens novinhas que acabaram de ser geradas
+            docker compose -f docker-compose.prod.yml pull api worker
+            # Levanta os containers novos e remove os antigos sem desligar o banco
+            docker compose -f docker-compose.prod.yml up -d api worker

@@ -1,11 +1,13 @@
-﻿namespace MyFinance.Domain.Entities
+﻿using MyFinance.Domain.Interfaces;
+
+namespace MyFinance.Domain.Entities
 {
-    public class Categoria : BaseEntity
+    public class Categoria : BaseEntity, IEntityComDono
     {
         public string Nome { get; private set; } = string.Empty;
         public TipoCategoria Tipo { get; set; }
         public bool Ativo { get; private set; }
-
+        public string UserId { get; private set; } = string.Empty;
         public Categoria(string nome, TipoCategoria tipo)
         {
             if (string.IsNullOrWhiteSpace(nome))
@@ -28,6 +30,11 @@
         public void AlterarStatus(bool ativo)
         {
             Ativo = ativo;
+        }
+
+        public void AssociarUsuario(string userId)
+        {
+            throw new NotImplementedException();
         }
 
         protected Categoria() { } 

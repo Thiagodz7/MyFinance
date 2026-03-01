@@ -8,6 +8,10 @@
 @inject IBrowserViewportService ViewportService
 @implements IBrowserViewportObserver
 
+@using MyFinance.Web.Services.Auth
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+
 <MudThemeProvider Theme="MyFinanceTheme.DefaultTheme" />
 <MudDialogProvider />
 <MudPopoverProvider />
@@ -68,7 +72,10 @@
             <SeletorConta></SeletorConta>
         </div>
 
-        <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" />
+        <MudIconButton Icon="@Icons.Material.Filled.Logout"
+                       Color="Color.Default"
+                       OnClick="Sair" />
+
     </MudAppBar>
 
     <MudMainContent Class="pt-16 px-4">
@@ -122,5 +129,11 @@
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private async Task Sair()
+    {
+        await AuthService.Logout();
+        Navigation.NavigateTo("/login"); 
     }
 }

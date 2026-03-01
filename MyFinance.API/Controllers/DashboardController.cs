@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyFinance.Application.Queries;
 
@@ -6,6 +7,7 @@ namespace MyFinance.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class DashboardController : ControllerBase
     {
         private readonly IMediator _mediator;

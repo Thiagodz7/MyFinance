@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyFinance.Application.Commands;
 using MyFinance.Application.Queries;
@@ -7,6 +8,7 @@ namespace MyFinance.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LancamentosController : ControllerBase
     {
         private readonly IMediator _mediator;

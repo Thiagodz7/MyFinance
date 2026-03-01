@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MyFinance.API.Services;
 using MyFinance.Application.Commands;
 using MyFinance.Domain.Interfaces;
 using MyFinance.Identity;
@@ -96,9 +98,51 @@ builder.Services.AddMassTransit(x =>
 // [CORREÇÃO AQUI] Adiciona o suporte a Controllers
 builder.Services.AddControllers();
 
+
+builder.Services.AddHttpContextAccessor(); 
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi(); versão antiga
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        // 1. Define o esquema de segurança (O "Cadeado")
+        var securityScheme = new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Insira o token JWT gerado no endpoint de login."
+        };
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes.Add("Bearer", securityScheme);
+
+        // 2. Aplica a segurança globalmente (A "Chave")
+        document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services.AddCors(options =>
 {

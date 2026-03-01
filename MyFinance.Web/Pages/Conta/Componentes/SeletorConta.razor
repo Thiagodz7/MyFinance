@@ -6,6 +6,9 @@
 @inject PageStateService PageState
 @implements IDisposable
 
+@using Microsoft.AspNetCore.Components.Authorization 
+@inject AuthenticationStateProvider AuthStateProvider
+
 <MudSelect T="Guid?"
            Label="Conta Ativa"
            Value="FinanceState.SelectedAccountId"
@@ -49,13 +52,38 @@
         PageState.OnCreateNewContaChanged -= HandleContasChanged;
     }
 
-    private async Task CarregarContas()
+ private async Task CarregarContas()
     {
-        var todasContas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
-
-        if (todasContas != null)
+        try
         {
-            _contas = todasContas.Where(c => c.Ativo).ToList();
+            // 1. Verificação de Segurança: Só busca se estiver logado
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity == null || !user.Identity.IsAuthenticated)
+            {
+                // Se não tá logado, não faz nada e não chama a API
+                return;
+            }
+
+            var todasContas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+
+            if (todasContas != null)
+            {
+                _contas = todasContas.Where(c => c.Ativo).ToList();
+            }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            // 3. Captura o 401 silenciosamente
+            // Se der 401, significa que o token expirou ou é inválido.
+            // Não fazemos nada aqui, o RedirectToLogin do App.razor vai lidar com isso.
+            Console.WriteLine("Usuário não autorizado ao carregar contas. Ignorando...");
+        }
+        catch (Exception ex)
+        {
+            // Outros erros podem ser logados no console sem quebrar a tela
+            Console.WriteLine($"Erro ao carregar contas: {ex.Message}");
         }
     }
 

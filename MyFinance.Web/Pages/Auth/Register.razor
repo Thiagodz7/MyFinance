@@ -1,0 +1,150 @@
+﻿@page "/registro"
+@layout MyFinance.Web.Layout.LoginLayout
+@attribute [AllowAnonymous]
+
+@using MyFinance.Web.DTOs.Auth
+@using MyFinance.Web.Services.Auth
+@using System.Text.RegularExpressions
+@inject IAuthService AuthService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center mud-width-full" Style="height: 100vh;">
+    <MudPaper Elevation="4" Class="pa-8" Width="100%" MaxWidth="400px">
+
+        <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="mb-6">
+            <MudIcon Icon="@Icons.Material.Filled.AppRegistration" Color="Color.Secondary" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Class="fw-bold">Crie sua Conta</MudText>
+            <MudText Typo="Typo.caption">Comece a organizar suas finanças hoje</MudText>
+        </MudStack>
+
+        <MudForm @ref="form" @bind-IsValid="@success">
+
+            @* Campo Email *@
+            <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
+                          @bind-Value="registerModel.Email"
+                          Required="true"
+                          RequiredError="O email é obrigatório."
+                          Validation="@(new Func<string, IEnumerable<string>>(ValidateEmail))"
+                          InputType="InputType.Email"
+                          Class="mb-4" />
+
+            @* Campo Senha *@
+            <MudTextField T="string" Label="Senha" Variant="Variant.Outlined"
+                          @bind-Value="registerModel.Password"
+                          Required="true"
+                          RequiredError="A senha é obrigatória."
+                          InputType="@PasswordInput"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@PasswordInputIcon"
+                          OnAdornmentClick="TogglePasswordVisibility"
+                          HelperText="Mínimo de 6 caracteres, maiúscula e caractere especial"
+                          Class="mb-4" />
+
+            @* Campo Confirmar Senha *@
+            <MudTextField T="string" Label="Confirmar Senha" Variant="Variant.Outlined"
+                          @bind-Value="registerModel.ConfirmPassword"
+                          Required="true"
+                          InputType="InputType.Password"
+                          Validation="@(new Func<string, string>(PasswordMatch))"
+                          Class="mb-6" />
+
+            @* Botão Registrar *@
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large" FullWidth="true"
+                       OnClick="FazerRegistro" Disabled="@(_processando)">
+                @if (_processando)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Criando conta...</MudText>
+                }
+                else
+                {
+                    <MudText>Registrar</MudText>
+                }
+            </MudButton>
+        </MudForm>
+
+        <MudDivider Class="my-6" />
+
+        <MudText Typo="Typo.body2" Align="Align.Center">
+            Já tem uma conta?
+            <MudLink Href="/login" Color="Color.Primary" Underline="Underline.Hover">Faça Login</MudLink>
+        </MudText>
+
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterUserDto registerModel = new RegisterUserDto();
+    bool success;
+    MudForm form;
+    bool _processando = false;
+
+    // Controle de visibilidade da senha
+    bool _isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void TogglePasswordVisibility()
+    {
+        if (_isShow)
+        {
+            _isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            _isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    // Validação customizada para comparar as senhas na hora
+    private string PasswordMatch(string confirmPassword)
+    {
+        if (registerModel.Password != confirmPassword)
+            return "As senhas não conferem";
+        return null;
+    }
+
+    // Validação básica de email via Regex
+    private IEnumerable<string> ValidateEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            yield return "O email é obrigatório";
+            yield break;
+        }
+
+        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            yield return "Formato de email inválido";
+    }
+
+    private async Task FazerRegistro()
+    {
+        await form.Validate();
+        if (!form.IsValid) return;
+
+        _processando = true;
+
+        // Chama o serviço
+        var resultado = await AuthService.Register(registerModel);
+
+        _processando = false;
+
+        if (resultado)
+        {
+            Snackbar.Add("Conta criada com sucesso! Bem-vindo.", Severity.Success);
+            // Como o AuthService já loga automático, mandamos pra Home
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            // Nota: Se quiser mostrar o erro exato (ex: "Email já existe"),
+            // precisaríamos alterar o AuthService para retornar a mensagem de erro da API.
+            Snackbar.Add("Erro ao criar conta. Verifique os dados ou tente outro email.", Severity.Error);
+        }
+    }
+}

@@ -1,4 +1,41 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using MyFinance.Web.Shared
+
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            @* AQUI É O PULO DO GATO: Use AuthorizeRouteView em vez de RouteView *@
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        @* Se tentar acessar página protegida deslogado, manda pro login *@
+                        <RedirectToLogin />
+                    }
+                    else
+                    {
+                        <p role="alert">Você não tem permissão para acessar esta página.</p>
+                    }
+                </NotAuthorized>
+                <Authorizing>
+                    @* Mostra isso enquanto ele vai no LocalStorage buscar o token *@
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+                        <text>Verificando credenciais...</text>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+        </Found>
+        <NotFound>
+            <PageTitle>Não encontrado</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Desculpe, não há nada neste endereço.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
+
+
+@* <Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -9,4 +46,4 @@
             <p role="alert">Sorry, there's nothing at this address.</p>
         </LayoutView>
     </NotFound>
-</Router>
+</Router> *@

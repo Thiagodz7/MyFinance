@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # 1. Banco de Dados (Blindado)
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: myfinance_db_prod
+    restart: unless-stopped # Se a VPS reiniciar, o banco volta sozinho
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "1435:1433" # CUIDADO: Em prod, use senhas muito fortes se for expor a porta!
+    volumes:
+      - sqlvolume_prod:/var/opt/mssql
+    networks:
+      - myfinance_net
+
+  # 2. Mensageiro (Com persistência)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: myfinance_bus_prod
+    restart: unless-stopped
+    ports:
+      - "15672:15672" # Painel (Recomendo bloquear no firewall da VPS depois)
+      - "5672:5672"
+    environment:
+      # Em produção, NUNCA use guest/guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data_prod:/var/lib/rabbitmq # Garante que as filas não sumam se reiniciar
+    networks:
+      - myfinance_net
+
+  # 3. Nossa API (Baixada do Docker Hub)
+  api:
+    # AQUI MUDA: Em vez de "build", usamos a imagem que o GitHub Actions vai gerar
+    image: ${DOCKERHUB_USERNAME}/myfinance-api:latest
+    container_name: myfinance_api_prod
+    restart: unless-stopped
+    ports:
+      - "80:8080" # Mapeia a porta 80 (padrão web) da VPS para a 8080 do container
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=${RABBITMQ_USER:-admin}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
+      - JwtSettings__Segredo=${JWT_SECRET}
+      - JwtSettings__Emissor=${JWT_ISSUER}
+      - JwtSettings__Publico=${JWT_AUDIENCE}
+      - ASPNETCORE_ENVIRONMENT=Production # Avisa o .NET que é pra valer (desliga Swagger exposto, otimiza cache)
+    depends_on:
+      - database
+      - rabbitmq
+    networks:
+      - myfinance_net
+
+  # 4. Nosso Trabalhador de Fundo
+  worker:
+    image: ${DOCKERHUB_USERNAME}/myfinance-worker:latest
+    container_name: myfinance_worker_prod
+    restart: unless-stopped
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=${RABBITMQ_USER:-admin}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - database
+      - rabbitmq
+    networks:
+      - myfinance_net
+
+# Isolamento de Rede (Segurança)
+networks:
+  myfinance_net:
+    driver: bridge
+
+# Volumes persistentes
+volumes:
+  sqlvolume_prod:
+  rabbitmq_data_prod:
