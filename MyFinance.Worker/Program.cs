@@ -31,8 +31,8 @@ builder.Services.AddMassTransit(x =>
     {
         // Lê do appsettings (local) ou das variáveis de ambiente do Docker (produção)
         var rabbitHost = builder.Configuration["RabbitMQ:Host"] ?? "localhost";
-        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "admin";
-        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "SuaSenhaForteRabbit!";
+        var rabbitUser = builder.Configuration["RabbitMQ:Username"] ?? "guest";
+        var rabbitPass = builder.Configuration["RabbitMQ:Password"] ?? "guest";
 
         cfg.Host(rabbitHost, "/", h =>
         {
