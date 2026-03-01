@@ -54,8 +54,8 @@ services:
     image: ${DOCKERHUB_USERNAME}/myfinance-api:latest
     container_name: myfinance_api_prod
     restart: unless-stopped
-    ports:
-      - "8080:8080" # Mapeia a porta 80 (padrão web) da VPS para a 8080 do container
+    # ports:
+    #   - "8080:8080" # Mapeia a porta 80 (padrão web) da VPS para a 8080 do container
     environment:
       - ConnectionStrings__DefaultConnection=Server=database;Database=MyFinanceDb;User Id=sa;Password=${DB_PASSWORD};TrustServerCertificate=True;
       - RabbitMQ__Host=rabbitmq
@@ -70,13 +70,14 @@ services:
       - rabbitmq
     networks:
       - myfinance_net
-
+      
+  # 4. Nosso Frontend Blazor (Baixado do Docker Hub)
   web:
     image: ${DOCKERHUB_USERNAME}/myfinance-web:latest
     container_name: myfinance_web_prod
     restart: unless-stopped
-    ports:
-      - "80:80" # O Blazor assume a porta 80 (Site principal)
+    # ports:
+    #   - "80:80" # O Blazor assume a porta 80 (Site principal)
     depends_on:
       - api
     networks:
