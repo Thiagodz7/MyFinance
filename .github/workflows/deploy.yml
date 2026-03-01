@@ -36,6 +36,14 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/myfinance-worker:latest
 
+      - name: Build e Push do Blazor (Front)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./MyFinance.Web/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/myfinance-web:latest
+
   # TAREFA 2: Atualizar o Servidor (Deploy)
   deploy:
     needs: build-and-push # Só roda se a tarefa 1 der certo
@@ -54,7 +62,7 @@ jobs:
             set -a
             source .env
             set +a
-            
-            # Agora os comandos vão funcionar, pois as senhas estão na memória
-            docker compose -f docker-compose.prod.yml pull api worker
-            docker compose -f docker-compose.prod.yml up -d api worker
+                 
+            # Agora atualiza API, Worker E o Front!
+            docker compose -f docker-compose.prod.yml pull api worker web
+            docker compose -f docker-compose.prod.yml up -d --force-recreate api worker web
