@@ -49,7 +49,12 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
             cd /opt/myfinance
-            # Baixa as imagens novinhas que acabaram de ser geradas
+            
+            # MÁGICA AQUI: Força o Linux a ler o arquivo .env e jogar na memória
+            set -a
+            source .env
+            set +a
+            
+            # Agora os comandos vão funcionar, pois as senhas estão na memória
             docker compose -f docker-compose.prod.yml pull api worker
-            # Levanta os containers novos e remove os antigos sem desligar o banco
             docker compose -f docker-compose.prod.yml up -d api worker
