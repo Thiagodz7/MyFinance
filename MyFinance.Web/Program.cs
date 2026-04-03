@@ -54,8 +54,6 @@ builder.Services.AddScoped(sp =>
     };
 });
 
-builder.Services.AddSingleton<IIndexedDbFactory, IndexedDbFactory>();
-
 builder.Services.AddScoped<MyFinanceLocalDb>(sp => {
     var jsRuntime = sp.GetRequiredService<IJSRuntime>();
     return new MyFinanceLocalDb(jsRuntime);
