@@ -1,10 +1,11 @@
 {
-  "name": "MyFinance XLS",
+  "main_item": "index.html",
+  "name": "MyFinance",
   "short_name": "MyFinance",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#03173d",
+  "theme_color": "#1E293B",
   "icons": [
     {
       "src": "icon-192.png",

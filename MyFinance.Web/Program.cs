@@ -1,6 +1,9 @@
+using IndexedDB.Blazor;
+using IndexedDB.Blazor;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using Microsoft.JSInterop;
 using MudBlazor;
 using MudBlazor.Services;
 using MyFinance.Web;
@@ -49,6 +52,13 @@ builder.Services.AddScoped(sp =>
     {
         BaseAddress = new Uri(baseAddress)
     };
+});
+
+builder.Services.AddSingleton<IIndexedDbFactory, IndexedDbFactory>();
+
+builder.Services.AddScoped<MyFinanceLocalDb>(sp => {
+    var jsRuntime = sp.GetRequiredService<IJSRuntime>();
+    return new MyFinanceLocalDb(jsRuntime);
 });
 
 builder.Services.AddScoped<PageStateService>();

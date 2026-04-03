@@ -9,5 +9,6 @@
         public DateTime Data { get; set; }
         public string Tipo { get; set; } = string.Empty; // "Receita" ou "Despesa"
         public Guid CategoriaId { get; set; }
+        public Guid ContaId { get; set; }
     }
 }

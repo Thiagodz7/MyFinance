@@ -6,6 +6,7 @@
 @inject PageStateService PageState
 @implements IDisposable
 @inject FinanceStateService FinanceState
+@inject MyFinanceLocalDb LocalDb
 
 <PageHeader Title="Dashboard" Subtitle="Visão geral de suas finanças este mês" />
 
@@ -167,11 +168,28 @@ else
         try
         {
             _carregando = true;
-            // IMPORTANTE: Não limpamos os arrays aqui para evitar o erro de SVG durante a transição
             StateHasChanged();
+
+            // 1. Tenta carregar do Cache Local IMEDIATAMENTE
+            // O IndexedSet funciona como uma lista em memória espelhada
+            if (LocalDb.CacheDashboard != null && LocalDb.CacheDashboard.Any())
+            {
+                var cache = LocalDb.CacheDashboard.FirstOrDefault();
+                if (cache != null)
+                {
+                    dashboard = cache;
+                    dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
+                    labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
+
+                    // Já mostramos o que temos no "bolso" para o usuário não ver tela branca
+                    _carregando = false;
+                    StateHasChanged();
+                }
+            }
 
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
 
+            // Lógica de buscar conta padrão (Mantida conforme seu original)
             if (idParaBuscar == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
@@ -185,20 +203,28 @@ else
 
             if (idParaBuscar != null)
             {
-                dashboard = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
-                if (dashboard != null && dashboard.DespesasPorCategoria != null)
+                // 2. Busca dados frescos da API na Hostinger
+                var dadosApi = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
+
+                if (dadosApi != null)
                 {
-                    // Atualizamos os arrays com os dados reais da API
+                    dashboard = dadosApi;
                     dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
                     labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
+
+                    // 3. Atualiza o Cache Local para a próxima abertura offline
+                    LocalDb.CacheDashboard.Clear();
+                    LocalDb.CacheDashboard.Add(dashboard);
+
+                    // O SaveChanges é o que realmente grava no IndexedDB do navegador
+                    await LocalDb.SaveChanges();
                 }
             }
-            else { dashboard = null; }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro dashboard: {ex.Message}");
-            dashboard = null;
+            // Se cair aqui (Offline), o usuário continua vendo o que carregamos do cache no passo 1
+            Console.WriteLine($"Dashboard em modo offline: {ex.Message}");
         }
         finally
         {
