@@ -34,7 +34,10 @@ namespace MyFinance.Domain.Entities
 
         public void AssociarUsuario(string userId)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(UserId))
+            {
+                UserId = userId;
+            }
         }
 
         protected Categoria() { } 
