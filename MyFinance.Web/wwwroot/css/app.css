@@ -112,3 +112,104 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* --- ESTILOS MOBILE (APP EXPERIENCE) --- */
+
+.bottom-nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #FFFFFF;
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.05); /* Sombra suave para cima */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    /* Suporte para telas de iPhone sem botão home */
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 2000;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    color: #94A3B8; /* Mesma cor dos ícones inativos do seu tema */
+    text-decoration: none;
+    flex: 1;
+    transition: color 0.2s;
+}
+
+    /* Cor quando o usuário estiver na tela correspondente */
+    .bottom-nav-item.active,
+    .bottom-nav-item:focus {
+        color: #10B981; /* Verde Esmeralda do seu tema */
+    }
+
+    .bottom-nav-item span {
+        font-size: 0.65rem;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+/* Respiro extra para o conteúdo não ficar escondido atrás da barra no celular */
+.mobile-content-padding {
+    padding-bottom: 90px !important;
+}
+
+/* Esconde a barra de rolagem no celular para ficar mais limpo */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+
+/* Garante que o seletor seja visível dentro do menu lateral escuro */
+.mud-drawer .seletor-conta-btn {
+    color: #FFFFFF !important; /* Branco puro */
+    opacity: 0.9;
+}
+
+    .mud-drawer .seletor-conta-btn:hover {
+        opacity: 1;
+        background-color: rgba(255, 255, 255, 0.1); /* Efeito de hover suave */
+    }
+
+/* Melhora a visibilidade de itens desabilitados no menu lateral escuro */
+.mud-drawer .mud-nav-link.disabled {
+    color: rgba(255, 255, 255, 0.45) !important; /* Aumentamos para 45% de brilho */
+}
+
+    /* Garante que o ícone também apareça */
+    .mud-drawer .mud-nav-link.disabled .mud-nav-link-icon {
+        color: rgba(255, 255, 255, 0.4) !important;
+    }
+
+/* Remove aquele efeito de "transparência fantasma" do MudBlazor v7 */
+.mud-drawer .mud-nav-link.mud-ripple.disabled {
+    opacity: 1 !important;
+}
+
+/* Garante que a modal não fique "presa" no topo e permita scroll no mobile */
+.mud-dialog-container {
+    align-items: flex-start !important; /* Começa do topo no mobile */
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+@media (min-width: 600px) {
+    .mud-dialog-container {
+        align-items: center !important; /* Volta ao centro no Desktop */
+    }
+}
+
+/* Força o scrollbar a aparecer se o conteúdo for grande */
+.mud-dialog-content {
+    max-height: 70vh; /* Limita a altura para sobrar espaço para os botões */
+    overflow-y: auto;
+}

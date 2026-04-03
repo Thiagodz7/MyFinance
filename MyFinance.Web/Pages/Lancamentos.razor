@@ -1,6 +1,7 @@
 ﻿@page "/lancamentos"
 @using MyFinance.Web.DTOs
 @using MyFinance.Web.Services
+@using MyFinance.Web.Shared
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
@@ -13,23 +14,31 @@
 
 @if (_carregando)
 {
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-    <MudText>Carregando dados...</MudText>
+    <div class="d-flex flex-column align-center justify-center mt-15">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-4" Style="color: #64748B;">Sincronizando extrato...</MudText>
+    </div>
 }
-else if (extrato == null)
+else if (extrato == null || (extrato.Lancamentos != null && !extrato.Lancamentos.Any()))
 {
-    <MudAlert Severity="Severity.Warning">Nenhuma conta encontrada. Cadastre uma conta no banco de dados.</MudAlert>
+    @* --- NOSSO NOVO EMPTY STATE ESTILO TEC AND TEC --- *@
+    <MudEmptyState Title="Extrato Vazio"
+                   Message="Não encontramos nenhum lançamento para esta conta neste período."
+                   Icon="@Icons.Material.Filled.ReceiptLong"
+                   IconColor="Color.Secondary"
+                   ActionText="Novo Lançamento"
+                   OnActionClick="@(() => AbrirDialog(null))" />
 }
 else
 {
-    <MudPaper Class="p-4 mb-4 d-flex justify-space-between align-center" Elevation="3">
-        <div>
-            <MudText Typo="Typo.caption">Conta</MudText>
-            <MudText Typo="Typo.h6">@extrato.NomeConta</MudText>
+    <MudPaper Class="pa-4 mb-6 d-flex justify-space-between align-center" Elevation="0" Style="border: 1px solid #E2E8F0; border-radius: 12px;">
+        <div class="mr-2">
+            <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Conta</MudText>
+            <MudText Typo="Typo.h6" Style="color: #1E293B; font-weight: 700; line-height: 1.2;">@extrato.NomeConta</MudText>
         </div>
-        <div class="text-end">
-            <MudText Typo="Typo.caption">Saldo Atual</MudText>
-            <MudText Typo="Typo.h4" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)">
+        <div class="text-end" style="min-width: fit-content;">
+            <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Saldo Atual</MudText>
+            <MudText Typo="Typo.h5" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)" Style="font-weight: 800; white-space: nowrap;">
                 @extrato.SaldoAtual.ToString("C2")
             </MudText>
         </div>

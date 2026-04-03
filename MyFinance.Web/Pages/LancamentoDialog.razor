@@ -17,7 +17,7 @@
             <MudItem xs="6">
                 @* Tipo desbloqueado para permitir corrigir sinal (Receita vs Despesa) *@
                 <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado"
-                           AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" 
+                           AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined"
                            Margin="Margin.Dense" Disabled="true">
                     <MudSelectItem Value="@("Receita")" />
                     <MudSelectItem Value="@("Despesa")" />
@@ -25,7 +25,25 @@
             </MudItem>
 
             <MudItem xs="6">
-                <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                @* --- VERSÃO PC: Calendário elegante do MudBlazor --- *@
+                <MudHidden Breakpoint="Breakpoint.SmAndDown">
+    
+                      <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" /> 
+                </MudHidden>
+
+                @* --- VERSÃO MOBILE: Seletor Nativo do Android/iOS --- *@
+                <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                        <MudTextField T="DateTime?"
+                                      Label="Data"
+                                      @bind-Value="DataVencimento"
+                                      InputType="InputType.Date"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Format="yyyy-MM-dd"
+                                      InputAttributes="@(new Dictionary<string, object> { { "step", "1" } })" />
+                    </MudHidden>
+                </MudHidden>
             </MudItem>
 
             <MudItem xs="6">
@@ -84,6 +102,12 @@
     private CategoriaDto? _categoriaSelecionada;
     private List<CategoriaDto>? categorias;
     private bool _processando = false;
+
+    private string DataMobile
+    {
+        get => DataVencimento?.ToString("yyyy-MM-dd") ?? "";
+        set => DataVencimento = DateTime.TryParse(value, out var dt) ? dt : null;
+    }
 
     protected override async Task OnInitializedAsync()
     {

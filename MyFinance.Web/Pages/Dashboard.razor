@@ -8,65 +8,109 @@
 @implements IDisposable
 @inject FinanceStateService FinanceState
 
-<MudText Typo="Typo.h4" Class="mb-4">Dashboard Financeiro</MudText>
-<MudText Typo="Typo.subtitle1" Class="mb-4 text-muted">Visão geral deste mês</MudText>
+@* Cabeçalho padronizado (Sem botão de ação no Dash, apenas info) *@
+<PageHeader Title="Dashboard" Subtitle="Visão geral de suas finanças este mês" />
 
 @if (_carregando)
 {
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <div class="d-flex flex-column align-center justify-center mt-15">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-4" Style="color: #64748B;">Sincronizando seus dados...</MudText>
+    </div>
 }
 else if (dashboard == null)
 {
-    <MudAlert Severity="Severity.Info">Nenhum dado encontrado. Cadastre uma conta e lançamentos.</MudAlert>
+    <MudEmptyState Title="Sem dados para exibir"
+                   Message="Parece que esta conta ainda não possui movimentações este mês."
+                   Icon="@Icons.Material.Filled.Insights"
+                   IconColor="Color.Info" />
 }
 else
 {
-    <MudGrid Class="mb-4">
+    <MudGrid Class="mb-6">
+        @* Widget de Receitas *@
         <MudItem xs="12" sm="4">
-            <WidgetResumo Titulo="Receitas" Icone1="@Icons.Material.Filled.ArrowUpward"
-                          Valor="@dashboard.TotalReceitas" CorIcone="Color.Success"
-                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
-                          CorPadrao="Color.Success" CorError="Color.Error"></WidgetResumo>
+            <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #10B981 !important;">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Class="mr-3" />
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">RECEITAS</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #10B981;">@dashboard.TotalReceitas.ToString("C2")</MudText>
+            </MudPaper>
         </MudItem>
+
+        @* Widget de Despesas *@
         <MudItem xs="12" sm="4">
-            <WidgetResumo Titulo="Despesas" Icone1="@Icons.Material.Filled.ArrowDownward"
-                          Valor="@dashboard.TotalDespesas" CorIcone="Color.Error"
-                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
-                          CorPadrao="Color.Error" CorError="Color.Error"></WidgetResumo>
+            <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #EF4444 !important;">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Class="mr-3" />
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">DESPESAS</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #EF4444;">@dashboard.TotalDespesas.ToString("C2")</MudText>
+            </MudPaper>
         </MudItem>
+
+        @* Widget de Lucro *@
         <MudItem xs="12" sm="4">
-            <WidgetResumo Titulo="Lucro do Mês" Icone1="@Icons.Material.Filled.AccountBalanceWallet"
-                          Valor="@dashboard.SaldoTotal" CorIcone="Color.Primary"
-                          Tamanho="Size.Large" Tipo1="Typo.subtitle2" Tipo2="Typo.h5"
-                          CorPadrao="Color.Primary" CorError="Color.Error" Positivo="true"></WidgetResumo>
+            <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #3B82F6 !important;">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" Class="mr-3" />
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">LUCRO LÍQUIDO</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #1E293B;">@dashboard.SaldoTotal.ToString("C2")</MudText>
+            </MudPaper>
         </MudItem>
     </MudGrid>
 
     <MudGrid>
-        <MudItem xs="12" md="6">
-            <MudPaper Class="p-4" Elevation="3">
-                <MudText Typo="Typo.h6" Class="mb-3">Onde gastei meu dinheiro?</MudText>
+        @* Gráfico de Categorias *@
+        <MudItem xs="12" md="7">
+            <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; height: 100%;">
+                <div class="d-flex align-center mb-6">
+                    <MudIcon Icon="@Icons.Material.Filled.PieChart" Color="Color.Primary" Class="mr-2" />
+                    <MudText Typo="Typo.h6" Style="font-weight: 700;">Distribuição de Gastos</MudText>
+                </div>
 
                 @if (dashboard.DespesasPorCategoria.Any())
                 {
-                    <MudChart ChartType="ChartType.Donut"
-                              Width="100%"
-                              Height="300px"
-                              InputData="@dataGrafico"
-                              InputLabels="@labelsGrafico" />
+                    <div class="d-flex justify-center align-center" style="height: 300px;">
+                        <MudChart ChartType="ChartType.Donut"
+                                  Width="250px"
+                                  Height="250px"
+                                  InputData="@dataGrafico"
+                                  InputLabels="@labelsGrafico"
+                                  ChartOptions="@_chartOptions" />
+                    </div>
                 }
                 else
                 {
-                    <MudText>Nenhuma despesa registrada neste mês.</MudText>
+                    <div class="d-flex align-center justify-center" style="height: 300px;">
+                        <MudText Style="color: #94A3B8;">Nenhuma despesa para exibir o gráfico.</MudText>
+                    </div>
                 }
             </MudPaper>
         </MudItem>
 
-        <MudItem xs="12" md="6">
-            <MudPaper Class="p-4 d-flex align-center justify-center" Elevation="3" Style="height: 100%">
-                <MudText Typo="Typo.body1" Color="Color.Secondary">
-                    🚀 Em breve: Análise Tributária PJ
-                </MudText>
+        @* Card de Insights *@
+        <MudItem xs="12" md="5">
+            <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; background-color: #F8FAFC; height: 100%;">
+                <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">Insights Financeiros</MudText>
+
+                <MudAlert Severity="Severity.Info" Variant="Variant.Filled" DropShadow="false" Class="mb-4 rounded-lg">
+                    Seu lucro aumentou 12% em relação ao mês passado! 🚀
+                </MudAlert>
+
+                <div class="d-flex flex-column gap-4">
+                    <div class="d-flex align-center justify-space-between">
+                        <MudText Typo="Typo.body2" Style="color: #64748B;">Análise Tributária PJ</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">EM BREVE</MudChip>
+                    </div>
+                    <MudDivider />
+                    <div class="d-flex align-center justify-space-between">
+                        <MudText Typo="Typo.body2" Style="color: #64748B;">Previsão de Impostos</MudText>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">LABS</MudChip>
+                    </div>
+                </div>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -75,21 +119,20 @@ else
 @code {
     private DashboardDto? dashboard;
     private bool _carregando = true;
-
-    // Arrays que o MudChart exige
     private double[] dataGrafico = { };
     private string[] labelsGrafico = { };
-
-    public void Dispose()
+    private ChartOptions _chartOptions = new ChartOptions()
     {
-        FinanceState.OnAccountChanged -= HandleAccountChanged;
-    }
+        ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#EC4899" }
+    };
+
+    public void Dispose() => FinanceState.OnAccountChanged -= HandleAccountChanged;
 
     protected override async Task OnInitializedAsync()
     {
         PageState.SetTitle("Dashboard");
         FinanceState.OnAccountChanged += HandleAccountChanged;
-        await CarregarDadosDashboard();   
+        await CarregarDadosDashboard();
     }
 
     private async void HandleAccountChanged()
@@ -107,19 +150,28 @@ else
         {
             _carregando = true;
 
+            // 1. Tenta pegar o ID que já está selecionado no Header
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
 
+            // 2. Se for NULL (primeiro acesso ou F5 na página), buscamos a conta padrão
             if (idParaBuscar == null)
             {
-                idParaBuscar = Guid.Parse("18ecbf59-2f36-446d-8566-86f8b10926bf");
-                FinanceState.SetAccount(Guid.Parse("18ecbf59-2f36-446d-8566-86f8b10926bf"), "Padrão");
-                // var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
-                // if (contas != null && contas.Any())
-                // {
-                //     idParaBuscar = contas.Where(c => c.Ativo).Last().Id;
-                // }
+                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
+
+                if (contas != null && contas.Any())
+                {
+                    // Pegamos a primeira conta ativa (ou a última, como você preferir)
+                    var contaPadrao = contas.FirstOrDefault(c => c.Ativo) ?? contas.First();
+
+                    idParaBuscar = contaPadrao.Id;
+
+                    // IMPORTANTE: Avisamos o sistema inteiro que agora esta é a conta ativa
+                    // Isso faz o nome da conta aparecer lá no Seletor do Header automaticamente!
+                    FinanceState.SetAccount(contaPadrao.Id, contaPadrao.Nome);
+                }
             }
 
+            // 3. Só chamamos a API do Dashboard se realmente encontramos um ID
             if (idParaBuscar != null)
             {
                 dashboard = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
@@ -130,14 +182,21 @@ else
                     labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
                 }
             }
+            else
+            {
+                // Se chegou aqui, o usuário não tem NENHUMA conta cadastrada
+                dashboard = null;
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro dashboard: {ex.Message}");
+            Console.WriteLine($"Erro dashboard dinâmico: {ex.Message}");
+            dashboard = null;
         }
         finally
         {
             _carregando = false;
+            StateHasChanged(); // Garante que a UI reflita a mudança
         }
     }
 }

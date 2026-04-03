@@ -1,0 +1,35 @@
+﻿@using MudBlazor
+
+<div class="d-flex flex-column align-center justify-center pa-10 text-center">
+    <div class="rounded-circle pa-6 mb-4" style="background-color: #F1F5F9;">
+        <MudIcon Icon="@Icon" Style="font-size: 4rem;" Color="@IconColor" />
+    </div>
+
+    <MudText Typo="Typo.h6" Style="font-weight: 700; color: #1E293B;">
+        @Title
+    </MudText>
+
+    <MudText Typo="Typo.body2" Class="mb-6" Style="color: #64748B; max-width: 300px;">
+        @Message
+    </MudText>
+
+    @if (OnActionClick.HasDelegate)
+    {
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="OnActionClick"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   DropShadow="false">
+            @ActionText
+        </MudButton>
+    }
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.SearchOff;
+    [Parameter] public Color IconColor { get; set; } = Color.Default;
+    [Parameter] public string Title { get; set; } = "Nenhum registro encontrado";
+    [Parameter] public string Message { get; set; } = "Parece que ainda não temos dados para exibir aqui.";
+    [Parameter] public string ActionText { get; set; } = "Adicionar Novo";
+    [Parameter] public EventCallback OnActionClick { get; set; }
+}

@@ -2,69 +2,76 @@
 @using MyFinance.Web.Services
 @inject HttpClient Http
 @inject FinanceStateService FinanceState
-
 @inject PageStateService PageState
 @implements IDisposable
-
-@using Microsoft.AspNetCore.Components.Authorization 
+@using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
 
-<MudSelect T="Guid?"
-           Label="Conta Ativa"
-           Value="FinanceState.SelectedAccountId"
-           ValueChanged="OnAccountSelected"
-           Variant="Variant.Outlined"
-           Margin="Margin.Dense"
-           Dense="true"
-           Class="max-z-index"
-           Style="width: 200px; background-color: white; border-radius: 8px;">
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" FullWidth="false">
+    <ActivatorContent>
+        <MudButton Variant="Variant.Text"
+                   Color="Color.Inherit"
+                   Class="seletor-conta-btn"
+                   StartIcon="@Icons.Material.Filled.AccountBalanceWallet"
+                   EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
+                   Style="text-transform: none; font-weight: 500; width: 100%; justify-content: flex-start; padding-left: 16px;">
+            @(FinanceState.SelectedAccountName ?? "Todas as Contas")
+        </MudButton>
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem OnClick="@(() => OnAccountSelected(null))">
+            <MudText Typo="Typo.body2">Todas as Contas</MudText>
+        </MudMenuItem>
 
-    <MudSelectItem T="Guid?" Value="null">Todas as Contas</MudSelectItem>
-
-    @if (_contas != null)
-    {
-        foreach (var conta in _contas)
+        @if (_contas != null)
         {
-            <MudSelectItem T="Guid?" Value="@conta.Id">@conta.Nome</MudSelectItem>
+            @foreach (var conta in _contas)
+            {
+                <MudMenuItem OnClick="@(() => OnAccountSelected(conta.Id))">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                                 Size="Size.Small"
+                                 Class="mr-2"
+                                 Color="@(FinanceState.SelectedAccountId == conta.Id ? Color.Success : Color.Transparent)" />
+                        <MudText Typo="Typo.body2">@conta.Nome</MudText>
+                    </div>
+                </MudMenuItem>
+            }
         }
-    }
-</MudSelect>
+    </ChildContent>
+</MudMenu>
 
 @code {
     private List<ContaDto>? _contas;
 
     protected override async Task OnInitializedAsync()
     {
-        // Busca as contas que você já tem cadastradas no banco
         await CarregarContas();
-
         PageState.OnCreateNewContaChanged += HandleContasChanged;
     }
 
     private async void HandleContasChanged()
     {
-        await CarregarContas();
-        StateHasChanged();
-    } 
+        await InvokeAsync(async () =>
+        {
+            await CarregarContas();
+            StateHasChanged();
+        });
+    }
 
     public void Dispose()
     {
         PageState.OnCreateNewContaChanged -= HandleContasChanged;
     }
 
- private async Task CarregarContas()
+    private async Task CarregarContas()
     {
         try
         {
-            // 1. Verificação de Segurança: Só busca se estiver logado
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            if (user.Identity == null || !user.Identity.IsAuthenticated)
-            {
-                // Se não tá logado, não faz nada e não chama a API
-                return;
-            }
+            if (user.Identity == null || !user.Identity.IsAuthenticated) return;
 
             var todasContas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
 
@@ -73,16 +80,8 @@
                 _contas = todasContas.Where(c => c.Ativo).ToList();
             }
         }
-        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-        {
-            // 3. Captura o 401 silenciosamente
-            // Se der 401, significa que o token expirou ou é inválido.
-            // Não fazemos nada aqui, o RedirectToLogin do App.razor vai lidar com isso.
-            Console.WriteLine("Usuário não autorizado ao carregar contas. Ignorando...");
-        }
         catch (Exception ex)
         {
-            // Outros erros podem ser logados no console sem quebrar a tela
             Console.WriteLine($"Erro ao carregar contas: {ex.Message}");
         }
     }
@@ -91,5 +90,7 @@
     {
         var nome = _contas?.FirstOrDefault(c => c.Id == id)?.Nome ?? "Todas as Contas";
         FinanceState.SetAccount(id, nome);
+        // O StateHasChanged aqui garante que o texto do botão mude na hora
+        StateHasChanged();
     }
 }

@@ -1,0 +1,48 @@
+﻿@using MudBlazor
+
+<div class="d-flex flex-wrap justify-space-between align-center mb-6 gap-4">
+    <div class="d-flex flex-column">
+        <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1E293B;">@Title</MudText>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <MudText Typo="Typo.body2" Style="color: #64748B;">@Subtitle</MudText>
+        }
+    </div>
+
+    <div class="d-flex flex-wrap align-center gap-6">
+        
+        @if (FiltrosExtras != null)
+        {
+            <div class="mr-2 d-flex align-center">
+                @FiltrosExtras
+            </div>
+        }
+
+        @if (OnActionClick.HasDelegate)
+        {
+            <MudHidden Breakpoint="Breakpoint.SmAndDown">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnActionClick" DropShadow="false">
+                    @ActionText
+                </MudButton>
+            </MudHidden>
+
+            <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                <MudFab Color="Color.Primary" 
+                        StartIcon="@ActionIcon" 
+                        OnClick="OnActionClick"
+                        Style="position: fixed; bottom: 85px; right: 16px; z-index: 100;" />
+            </MudHidden>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public string Subtitle { get; set; } = string.Empty;
+    
+    [Parameter] public string ActionText { get; set; } = "Novo";
+    [Parameter] public string ActionIcon { get; set; } = Icons.Material.Filled.Add;
+    [Parameter] public EventCallback<MouseEventArgs> OnActionClick { get; set; }
+
+    [Parameter] public RenderFragment? FiltrosExtras { get; set; }
+}

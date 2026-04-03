@@ -33,25 +33,49 @@
         </MudDrawerHeader>
 
         <MudNavMenu Class="mt-4" Color="Color.Secondary">
-            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/lancamentos" Icon="@Icons.Material.Filled.List">Lançamentos</MudNavLink>
-            <MudNavLink Href="/relatorios" Icon="@Icons.Material.Filled.PieChart" Disabled="true">Relatórios</MudNavLink>
+
+            @* Se for Desktop, mostra tudo na lateral. Se for Mobile, os principais vão para a barra inferior *@
+            @if (!_isMobile)
+            {
+                <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+                <MudNavLink Href="/lancamentos" Icon="@Icons.Material.Filled.List">Lançamentos</MudNavLink>
+                <MudNavLink Href="/contas" Icon="@Icons.Material.Filled.AccountBalance">Contas</MudNavLink>
+                <MudNavLink Href="/relatorios"
+                            Icon="@Icons.Material.Filled.PieChart"
+                            Style="color: rgba(255,255,255, 0.4); cursor: not-allowed;"
+                            @onclick:preventDefault="true">
+                    Relatórios (Em breve)
+                </MudNavLink>
+            }
 
             @if (_drawerOpen)
             {
                 <MudText Typo="Typo.subtitle2" Class="px-4 mt-6 mb-2" Style="color: #64748B;">CONFIGURAÇÕES</MudText>
             }
 
-            <MudNavLink Href="/contas" Icon="@Icons.Material.Filled.AccountBalance">Contas Bancárias</MudNavLink>
             <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
+
+            @* Botão de Sair no menu lateral para Mobile *@
+            @if (_isMobile)
+            {
+                <MudNavLink OnClick="Sair" Icon="@Icons.Material.Filled.Logout" Style="color: #EF4444;">Sair</MudNavLink>
+            }
         </MudNavMenu>
 
         <div class="d-flex justify-center mt-auto mb-4">
-            @* Melhoria: Texto de versão dinâmico para não quebrar no modo Mini *@
             <MudText Typo="Typo.caption" Style="color: #64748B;">
                 @(_drawerOpen ? "v1.0.0" : "v1.0")
             </MudText>
         </div>
+
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <div class="px-4 pb-4 pt-2">
+                <MudText Typo="Typo.overline" Style="color: #94A3B8; display: block; margin-bottom: 4px;">CONTA ATIVA</MudText>
+
+                <SeletorConta></SeletorConta>
+            </div>
+            <MudDivider />
+        </MudHidden>
 
     </MudDrawer>
 
@@ -68,21 +92,45 @@
 
         <MudSpacer />
 
-        <div class="mr-4">
-            <SeletorConta></SeletorConta>
-        </div>
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <div class="mr-4">
+                <SeletorConta></SeletorConta>
+            </div>
+        </MudHidden>
 
-        <MudIconButton Icon="@Icons.Material.Filled.Logout"
-                       Color="Color.Default"
-                       OnClick="Sair" />
-
+        @if (!_isMobile)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Default" OnClick="Sair" />
+        }
     </MudAppBar>
 
-    <MudMainContent Class="pt-16 px-4">
+    @* Adicionamos a classe mobile-content-padding aqui *@
+    <MudMainContent Class="@($"px-4 {(_isMobile ? "mobile-content-padding" : "")}")" Style="padding-top: 85px;">
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
             @Body
         </MudContainer>
     </MudMainContent>
+
+    @* --- BOTTOM NAVIGATION EXCLUSIVA PARA MOBILE --- *@
+    @if (_isMobile)
+    {
+        <div class="bottom-nav-bar">
+            <NavLink href="/" class="bottom-nav-item" Match="NavLinkMatch.All" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Medium" />
+                <span>Início</span>
+            </NavLink>
+
+            <NavLink href="/lancamentos" class="bottom-nav-item" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Filled.List" Size="Size.Medium" />
+                <span>Extrato</span>
+            </NavLink>
+
+            <NavLink href="/contas" class="bottom-nav-item" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Medium" />
+                <span>Contas</span>
+            </NavLink>
+        </div>
+    }
 </MudLayout>
 
 @code {
@@ -105,14 +153,16 @@
 
     public async Task NotifyBrowserViewportChangeAsync(BrowserViewportEventArgs e)
     {
-        // 1. Atualizamos se é mobile baseado no Breakpoint do evento
+        bool wasMobile = _isMobile;
         _isMobile = e.Breakpoint <= Breakpoint.Sm;
 
-        // 2. Ajustamos o menu: aberto no PC (Mini), fechado no Mobile (Temporary)
-        // Usamos InvokeAsync para garantir que a UI entenda a mudança de estado
         await InvokeAsync(() =>
         {
-            _drawerOpen = !_isMobile;
+            // Força o menu a fechar quando muda para mobile, e abrir quando vai para PC
+            if (_isMobile != wasMobile)
+            {
+                _drawerOpen = !_isMobile;
+            }
             StateHasChanged();
         });
     }
@@ -134,6 +184,6 @@
     private async Task Sair()
     {
         await AuthService.Logout();
-        Navigation.NavigateTo("/login"); 
+        Navigation.NavigateTo("/login");
     }
 }

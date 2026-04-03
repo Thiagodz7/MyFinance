@@ -1,62 +1,64 @@
 ﻿@page "/categorias"
 @using MyFinance.Web.DTOs
+@using MyFinance.Web.Shared
 @inject HttpClient Http
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
 @inject ISnackbar Snackbar
 
-<div class="d-flex justify-space-between align-center mb-4">
-    <MudText Typo="Typo.h4">Categorias</MudText>
-
-
-    <MudStack Row="true">
-        <MudCheckBox T="bool" @bind-Value="_mostrarInativos" Label="Mostrar Inativos" Color="Color.Default" Dense="true" />
-
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="@(() => AbrirDialog())">
-            Nova Categoria
-        </MudButton>
-    </MudStack>
-</div>
+@* --- CABEÇALHO PADRONIZADO --- *@
+<PageHeader Title="Categorias"
+            Subtitle="Organize suas receitas e despesas"
+            ActionText="Nova Categoria"
+            OnActionClick="@(() => AbrirDialog(null!))">
+    <FiltrosExtras>
+        <MudCheckBox T="bool"
+                     @bind-Value="_mostrarInativos"
+                     Label="Mostrar Inativos"
+                     Color="Color.Primary"
+                     Dense="true" />
+    </FiltrosExtras>
+</PageHeader>
 
 @if (categorias == null)
 {
-    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    <div class="d-flex flex-column align-center justify-center mt-15">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-4" Style="color: #64748B;">Carregando categorias...</MudText>
+    </div>
 }
 else if (!_categoriasFiltered!.Any())
 {
-    <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
-        Nenhuma categoria encontrada.
-    </MudAlert>
+    <MudEmptyState Title="Nenhuma categoria"
+                   Message="Não encontramos categorias com o filtro atual. Deseja criar uma?"
+                   Icon="@Icons.Material.Filled.Category"
+                   IconColor="Color.Info"
+                   ActionText="Criar Categoria"
+                   OnActionClick="@(() => AbrirDialog(null!))" />
 }
 else
 {
-
     <MudTable Items="@_categoriasFiltered"
               Hover="true"
               Striped="true"
               Dense="true"
-              Elevation="4"
-              Class="rounded-lg">
+              Elevation="0"
+              Class="rounded-lg border border-solid mud-border-lines-default">
 
         <HeaderContent>
-            <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Nome</MudText></MudTh>
-            <MudTh><MudText Typo="Typo.subtitle2" Class="fw-bold">Tipo</MudText></MudTh>
-            <MudTh Style="text-align: right"><MudText Typo="Typo.subtitle2" Class="fw-bold">Ações</MudText></MudTh>
+            <MudTh Style="font-weight: 600; color: #1E293B;">Nome</MudTh>
+            <MudTh Style="font-weight: 600; color: #1E293B;">Tipo</MudTh>
+            <MudTh Style="text-align: right; font-weight: 600; color: #1E293B;">Ações</MudTh>
         </HeaderContent>
 
         <RowTemplate>
-            @* Coluna NOME: Aplica estilo visual se estiver inativo *@
             <MudTd DataLabel="Nome">
                 <MudText Typo="Typo.body2"
-                         Style="@(context.Ativo ? "font-weight: 500;" : "color: var(--mud-palette-text-disabled); text-decoration: line-through;")">
+                         Style="@(context.Ativo ? "font-weight: 500; color: #1E293B;" : "color: #94A3B8; text-decoration: line-through;")">
                     @context.Nome
                 </MudText>
             </MudTd>
 
-            @* Coluna TIPO: Chips com ícones para bater o olho rápido *@
             <MudTd DataLabel="Tipo">
                 <MudChip T="string"
                          Variant="Variant.Text"
@@ -67,10 +69,8 @@ else
                 </MudChip>
             </MudTd>
 
-            @* Coluna AÇÕES: Alinhada à direita *@
             <MudTd DataLabel="Ações" Style="text-align: right">
-                <MudStack Row="true" Spacing="0" Justify="Justify.FlexEnd">
-
+                <div class="d-flex justify-end gap-1">
                     <MudTooltip Text="Editar">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Color="Color.Warning"
@@ -84,17 +84,9 @@ else
                                        Size="Size.Small"
                                        OnClick="@(async () => await AlternarStatusCategoria(context))" />
                     </MudTooltip>
-
-                </MudStack>
+                </div>
             </MudTd>
         </RowTemplate>
-
-        @* Opcional: Mensagem bonita se a lista estiver vazia *@
-        <NoRecordsContent>
-            <MudText Typo="Typo.body2" Align="Align.Center" Class="pa-4">
-                Nenhuma categoria encontrada.
-            </MudText>
-        </NoRecordsContent>
     </MudTable>
 }
 
@@ -109,11 +101,6 @@ else
         await CarregarCategorias();
     }
 
-    private void AlternarFiltro(bool mostrar)
-    {
-        _mostrarInativos = mostrar;
-    }
-
     private async Task AbrirDialog(CategoriaDto categoria = null!)
     {
         var parameters = new DialogParameters();
@@ -122,7 +109,6 @@ else
         var title = categoria == null ? "Nova Categoria" : "Editar Categoria";
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
 
-        // ATENÇÃO: Renomeie seu arquivo de NovaContaDialog para ContaDialog
         var dialog = await DialogService.ShowAsync<CategoriaDialog>(title, parameters, options);
         var result = await dialog.Result;
 
@@ -142,7 +128,6 @@ else
         {
             Snackbar.Add($"Erro ao carregar categorias: {ex.Message}", Severity.Error);
         }
-
     }
 
     private async Task AlternarStatusCategoria(CategoriaDto categoria)
@@ -150,7 +135,6 @@ else
         string acao = categoria.Ativo ? "inativar" : "reativar";
         bool novoStatus = !categoria.Ativo;
 
-        // Confirmação
         bool? result = await DialogService.ShowMessageBox(
             "Confirmação",
             $"Deseja realmente {acao} a categoria '{categoria.Nome}'?",
@@ -161,7 +145,6 @@ else
         try
         {
             var body = new { Ativo = novoStatus };
-
             var response = await Http.PatchAsJsonAsync($"api/categorias/{categoria.Id}/status", body);
 
             if (response.IsSuccessStatusCode)
