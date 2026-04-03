@@ -3,12 +3,10 @@
 @using MyFinance.Web.Services
 @using MyFinance.Web.Shared
 @inject HttpClient Http
-@inject MyFinance.Web.Services.PageStateService PageState
-
+@inject PageStateService PageState
 @implements IDisposable
 @inject FinanceStateService FinanceState
 
-@* Cabeçalho padronizado (Sem botão de ação no Dash, apenas info) *@
 <PageHeader Title="Dashboard" Subtitle="Visão geral de suas finanças este mês" />
 
 @if (_carregando)
@@ -63,7 +61,6 @@ else
     </MudGrid>
 
     <MudGrid>
-        @* Gráfico de Categorias *@
         <MudItem xs="12" md="7">
             <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; height: 100%;">
                 <div class="d-flex align-center mb-6">
@@ -71,15 +68,37 @@ else
                     <MudText Typo="Typo.h6" Style="font-weight: 700;">Distribuição de Gastos</MudText>
                 </div>
 
-                @if (dashboard.DespesasPorCategoria.Any())
+                @* Renderização Atômica: Capturamos os dados em variáveis locais para evitar IndexOutOfRange *@
+                @{
+                    var dadosLocais = dataGrafico;
+                    var labelsLocais = labelsGrafico;
+                }
+
+                @if (dadosLocais != null && labelsLocais != null && dadosLocais.Length > 0 && dadosLocais.Length == labelsLocais.Length)
                 {
-                    <div class="d-flex justify-center align-center" style="height: 300px;">
-                        <MudChart ChartType="ChartType.Donut"
-                                  Width="250px"
-                                  Height="250px"
-                                  InputData="@dataGrafico"
-                                  InputLabels="@labelsGrafico"
-                                  ChartOptions="@_chartOptions" />
+                    <div class="d-flex flex-column align-center">
+                        <div class="d-flex justify-center align-center" style="width: 100%; min-height: 250px;">
+                            <MudChart ChartType="ChartType.Donut"
+                                      Width="220px"
+                                      Height="220px"
+                                      InputData="@dadosLocais"
+                                      InputLabels="@labelsLocais"
+                                      ChartOptions="@_chartOptions" />
+                        </div>
+
+                        @* Legenda Manual Segura (Unificada PC/Mobile) *@
+                        <div class="d-flex flex-wrap justify-center gap-4 mt-6">
+                            @for (int i = 0; i < labelsLocais.Length; i++)
+                            {
+                                var localIndex = i;
+                                <div class="d-flex align-center">
+                                    <div style="@($"width:12px; height:12px; border-radius:50%; background-color:{_chartOptions.ChartPalette[localIndex % _chartOptions.ChartPalette.Length]}; margin-right:8px;")"></div>
+                                    <MudText Typo="Typo.caption" Style="color: #1E293B; font-weight: 500;">
+                                        @labelsLocais[localIndex]
+                                    </MudText>
+                                </div>
+                            }
+                        </div>
                     </div>
                 }
                 else
@@ -91,11 +110,9 @@ else
             </MudPaper>
         </MudItem>
 
-        @* Card de Insights *@
         <MudItem xs="12" md="5">
             <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; background-color: #F8FAFC; height: 100%;">
                 <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">Insights Financeiros</MudText>
-
                 <MudAlert Severity="Severity.Info" Variant="Variant.Filled" DropShadow="false" Class="mb-4 rounded-lg">
                     Seu lucro aumentou 12% em relação ao mês passado! 🚀
                 </MudAlert>
@@ -123,7 +140,8 @@ else
     private string[] labelsGrafico = { };
     private ChartOptions _chartOptions = new ChartOptions()
     {
-        ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#EC4899" }
+        ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#EC4899" },
+        ShowLegend = false
     };
 
     public void Dispose() => FinanceState.OnAccountChanged -= HandleAccountChanged;
@@ -149,54 +167,43 @@ else
         try
         {
             _carregando = true;
+            // IMPORTANTE: Não limpamos os arrays aqui para evitar o erro de SVG durante a transição
+            StateHasChanged();
 
-            // 1. Tenta pegar o ID que já está selecionado no Header
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
 
-            // 2. Se for NULL (primeiro acesso ou F5 na página), buscamos a conta padrão
             if (idParaBuscar == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
-
                 if (contas != null && contas.Any())
                 {
-                    // Pegamos a primeira conta ativa (ou a última, como você preferir)
                     var contaPadrao = contas.FirstOrDefault(c => c.Ativo) ?? contas.First();
-
                     idParaBuscar = contaPadrao.Id;
-
-                    // IMPORTANTE: Avisamos o sistema inteiro que agora esta é a conta ativa
-                    // Isso faz o nome da conta aparecer lá no Seletor do Header automaticamente!
                     FinanceState.SetAccount(contaPadrao.Id, contaPadrao.Nome);
                 }
             }
 
-            // 3. Só chamamos a API do Dashboard se realmente encontramos um ID
             if (idParaBuscar != null)
             {
                 dashboard = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
-
-                if (dashboard != null)
+                if (dashboard != null && dashboard.DespesasPorCategoria != null)
                 {
+                    // Atualizamos os arrays com os dados reais da API
                     dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
                     labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
                 }
             }
-            else
-            {
-                // Se chegou aqui, o usuário não tem NENHUMA conta cadastrada
-                dashboard = null;
-            }
+            else { dashboard = null; }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Erro dashboard dinâmico: {ex.Message}");
+            Console.WriteLine($"Erro dashboard: {ex.Message}");
             dashboard = null;
         }
         finally
         {
             _carregando = false;
-            StateHasChanged(); // Garante que a UI reflita a mudança
+            StateHasChanged();
         }
     }
 }

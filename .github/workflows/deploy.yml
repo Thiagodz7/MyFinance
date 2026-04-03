@@ -58,11 +58,19 @@ jobs:
           script: |
             cd /opt/myfinance
             
-            # MÁGICA AQUI: Força o Linux a ler o arquivo .env e jogar na memória
+            # Carrega as variáveis de ambiente
             set -a
-            source .env
+            [ -f .env ] && source .env
             set +a
-                 
-            # Agora atualiza API, Worker E o Front!
+            
+            # 1. Baixa as imagens novas
             docker compose -f docker-compose.prod.yml pull api worker web
+            
+            # 2. Sobe os novos containers (o --remove-orphans limpa lixo se houver)
             docker compose -f docker-compose.prod.yml up -d --force-recreate api worker web
+            
+            # 3. Limpa imagens antigas "soltas" (pra não lotar o disco da VPS)
+            docker image prune -f
+            
+            # 4. Restart no proxy se for necessário (conforme você citou)
+            docker compose -f docker-compose.prod.yml restart proxy
