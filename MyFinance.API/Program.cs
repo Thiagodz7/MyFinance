@@ -33,7 +33,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     }));
 
 builder.Services
-    .AddIdentity<ApplicationUser, IdentityRole>() 
+    .AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<SecurityDbContext>()
     .AddDefaultTokenProviders();
 
@@ -105,7 +105,7 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddControllers();
 
 
-builder.Services.AddHttpContextAccessor(); 
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 // Add services to the container.
@@ -150,16 +150,37 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAll", builder => {
-        builder.WithOrigins(
-                "https://myfinancesxls.tech",
-                "https://www.myfinancesxls.tech" // Adicionando o WWW aqui!
-               )
-               .AllowAnyHeader()
-               .AllowAnyMethod();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            // Em Dev, deixa a porta escancarada para você testar no localhost em paz
+            policy.AllowAnyOrigin()
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // Em Prod, a segurança máxima que configuramos hoje
+            policy.WithOrigins("https://myfinancesxls.tech", "https://www.myfinancesxls.tech")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
     });
 });
+
+//builder.Services.AddCors(options => {
+//    options.AddPolicy("AllowAll", builder => {
+//        builder.WithOrigins(
+//                "https://myfinancesxls.tech",
+//                "https://www.myfinancesxls.tech" // Adicionando o WWW aqui!
+//               )
+//               .AllowAnyHeader()
+//               .AllowAnyMethod();
+//    });
+//});
 
 //Quando quiser limitar o acesso
 //builder.Services.AddCors(options => {
@@ -215,7 +236,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
 
-app.UseAuthentication(); 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers(); // Importante: Garanta que esta linha existe para mapear seu Controller!
