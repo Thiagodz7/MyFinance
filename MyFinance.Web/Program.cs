@@ -17,7 +17,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configura o HttpClient para apontar para o Docker (localhost:8080)
 //builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("http://187.77.228.172:8080/") });
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://myfinancesxls.tech/api/") });
+builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri("https://myfinancesxls.tech/") });
 
 builder.Services.AddScoped<PageStateService>();
 builder.Services.AddScoped<FinanceStateService>();

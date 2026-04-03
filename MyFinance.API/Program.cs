@@ -150,15 +150,15 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        builder =>
-        {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
-        });
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", builder => {
+        builder.WithOrigins(
+                "https://myfinancesxls.tech",
+                "https://www.myfinancesxls.tech" // Adicionando o WWW aqui!
+               )
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
 });
 
 //Quando quiser limitar o acesso
