@@ -9,18 +9,23 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center mud-width-full" Style="height: 100vh;">
-    <MudPaper Elevation="4" Class="pa-8" Width="100%" MaxWidth="400px">
+<PageTitle>Criar Conta - Pejota.io</PageTitle>
 
-        <MudStack Spacing="2" AlignItems="AlignItems.Center" Class="mb-6">
-            <MudIcon Icon="@Icons.Material.Filled.AppRegistration" Color="Color.Secondary" Size="Size.Large" />
-            <MudText Typo="Typo.h5" Class="fw-bold">Crie sua Conta</MudText>
-            <MudText Typo="Typo.caption">Comece a organizar suas finanças hoje</MudText>
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center mud-width-full" Style="height: 100vh;">
+    <MudPaper Elevation="3" Class="pa-8" Width="100%" MaxWidth="400px" Style="border-radius: 16px;">
+
+        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="mb-8">
+            <MudImage Src="icon-192.png" Alt="Pejota.io Logo" Width="64" Height="64" Class="mb-2 rounded-lg" />
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1E293B;">
+                Comece no Pejota<span style="color: #3B82F6;">.io</span>
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: #64748B;" Align="Align.Center">
+                A gestão financeira inteligente para o profissional PJ e Pessoa Física.
+            </MudText>
         </MudStack>
 
         <MudForm @ref="form" @bind-IsValid="@success">
 
-            @* Campo Email *@
             <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
                           @bind-Value="registerModel.Email"
                           Required="true"
@@ -29,8 +34,7 @@
                           InputType="InputType.Email"
                           Class="mb-4" />
 
-            @* Campo Senha *@
-            <MudTextField T="string" Label="Senha" Variant="Variant.Outlined"
+            <MudTextField T="string" Label="Crie uma Senha" Variant="Variant.Outlined"
                           @bind-Value="registerModel.Password"
                           Required="true"
                           RequiredError="A senha é obrigatória."
@@ -38,23 +42,22 @@
                           Adornment="Adornment.End"
                           AdornmentIcon="@PasswordInputIcon"
                           OnAdornmentClick="TogglePasswordVisibility"
-                          HelperText="Mínimo de 6 caracteres, maiúscula e caractere especial"
+                          HelperText="Mín. 6 caracteres, maiúscula e símbolo"
                           Class="mb-4" />
 
-            @* Campo Confirmar Senha *@
-            <MudTextField T="string" Label="Confirmar Senha" Variant="Variant.Outlined"
+            <MudTextField T="string" Label="Confirme a Senha" Variant="Variant.Outlined"
                           @bind-Value="registerModel.ConfirmPassword"
                           Required="true"
                           InputType="InputType.Password"
                           Validation="@(new Func<string, string>(PasswordMatch))"
                           Class="mb-6" />
 
-            @* Botão Registrar *@
-            <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large" FullWidth="true"
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
+                       Style="border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;"
                        OnClick="FazerRegistro" Disabled="@(_processando)">
                 @if (_processando)
                 {
-                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" Color="Color.Surface" />
                     <MudText Class="ms-2">Criando conta...</MudText>
                 }
                 else
@@ -67,8 +70,8 @@
         <MudDivider Class="my-6" />
 
         <MudText Typo="Typo.body2" Align="Align.Center">
-            Já tem uma conta?
-            <MudLink Href="/login" Color="Color.Primary" Underline="Underline.Hover">Faça Login</MudLink>
+            Já possui cadastro?
+            <MudLink Href="/login" Color="Color.Primary" Style="font-weight: 600;" Underline="Underline.Hover">Faça Login</MudLink>
         </MudText>
 
     </MudPaper>
@@ -101,7 +104,6 @@
         }
     }
 
-    // Validação customizada para comparar as senhas na hora
     private string PasswordMatch(string confirmPassword)
     {
         if (registerModel.Password != confirmPassword)
@@ -109,7 +111,6 @@
         return null;
     }
 
-    // Validação básica de email via Regex
     private IEnumerable<string> ValidateEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
@@ -128,22 +129,16 @@
         if (!form.IsValid) return;
 
         _processando = true;
-
-        // Chama o serviço
         var resultado = await AuthService.Register(registerModel);
-
         _processando = false;
 
         if (resultado)
         {
             Snackbar.Add("Conta criada com sucesso! Bem-vindo.", Severity.Success);
-            // Como o AuthService já loga automático, mandamos pra Home
             Navigation.NavigateTo("/");
         }
         else
         {
-            // Nota: Se quiser mostrar o erro exato (ex: "Email já existe"),
-            // precisaríamos alterar o AuthService para retornar a mensagem de erro da API.
             Snackbar.Add("Erro ao criar conta. Verifique os dados ou tente outro email.", Severity.Error);
         }
     }

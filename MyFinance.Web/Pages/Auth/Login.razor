@@ -7,29 +7,43 @@
 @layout MyFinance.Web.Layout.LoginLayout
 @attribute [AllowAnonymous]
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center mud-width-full" Style="height: 100vh;">
-    <MudPaper Elevation="4" Class="pa-8" Width="100%" MaxWidth="400px">
+<PageTitle>Login - Pejota.io</PageTitle>
 
-        <MudStack Spacing="4" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Primary" Size="Size.Large" />
-            <MudText Typo="Typo.h5">MyFinance Login</MudText>
+<MudContainer MaxWidth="MaxWidth.Small" Class="d-flex align-center justify-center mud-width-full" Style="height: 100vh;">
+    <MudPaper Elevation="3" Class="pa-8" Width="100%" MaxWidth="400px" Style="border-radius: 16px;">
+
+        <MudStack Spacing="1" AlignItems="AlignItems.Center" Class="mb-8">
+            <MudImage Src="icon-192.png" Alt="Pejota.io Logo" Width="64" Height="64" Class="mb-2 rounded-lg" />
+            <MudText Typo="Typo.h5" Style="font-weight: 800; color: #1E293B;">
+                Bem-vindo ao Pejota<span style="color: #3B82F6;">.io</span>
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: #64748B;">Acesse sua conta para gerenciar seu negócio</MudText>
         </MudStack>
 
         <MudForm @ref="form" @bind-IsValid="@success">
             <MudTextField T="string" Label="Email" Variant="Variant.Outlined"
-                          @bind-Value="loginModel.Email" Required="true" RequiredError="Email é obrigatório"
-                          InputType="InputType.Email" Class="mt-4" />
+                          @bind-Value="loginModel.Email" Required="true" RequiredError="O email é obrigatório"
+                          InputType="InputType.Email" Class="mb-4" />
 
             <MudTextField T="string" Label="Senha" Variant="Variant.Outlined"
-                          @bind-Value="loginModel.Password" Required="true" RequiredError="Senha é obrigatória"
-                          InputType="InputType.Password" Class="mt-4" />
+                          @bind-Value="loginModel.Password" Required="true" RequiredError="A senha é obrigatória"
+                          InputType="@PasswordInput"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@PasswordInputIcon"
+                          OnAdornmentClick="TogglePasswordVisibility"
+                          Class="mb-2" />
+
+            <div class="d-flex justify-end mb-4">
+                <MudLink Href="#" Typo="Typo.caption" Color="Color.Primary" Underline="Underline.Hover">Esqueceu a senha?</MudLink>
+            </div>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" FullWidth="true"
-                       Class="mt-6" OnClick="FazerLogin" Disabled="@(_processando)">
+                       Style="border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;"
+                       OnClick="FazerLogin" Disabled="@(_processando)">
                 @if (_processando)
                 {
-                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                    <MudText Class="ms-2">Entrando...</MudText>
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" Color="Color.Surface" />
+                    <MudText Class="ms-2">Autenticando...</MudText>
                 }
                 else
                 {
@@ -38,8 +52,10 @@
             </MudButton>
         </MudForm>
 
-        <MudText Typo="Typo.body2" Align="Align.Center" Class="mt-4">
-            Não tem conta? <MudLink Href="/registro">Cadastre-se</MudLink>
+        <MudDivider Class="my-6" />
+
+        <MudText Typo="Typo.body2" Align="Align.Center">
+            Ainda não tem conta? <MudLink Href="/registro" Color="Color.Primary" Style="font-weight: 600;" Underline="Underline.Hover">Cadastre-se</MudLink>
         </MudText>
 
     </MudPaper>
@@ -50,6 +66,27 @@
     bool success;
     MudForm form;
     bool _processando = false;
+
+    // Controle de visibilidade da senha no Login
+    bool _isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void TogglePasswordVisibility()
+    {
+        if (_isShow)
+        {
+            _isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            _isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
 
     private async Task FazerLogin()
     {
