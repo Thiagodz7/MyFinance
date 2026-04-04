@@ -168,10 +168,9 @@ else
         try
         {
             _carregando = true;
-            StateHasChanged();
+            // Remova o StateHasChanged() inicial, deixe o Blazor renderizar no tempo dele
 
             // 1. Tenta carregar do Cache Local IMEDIATAMENTE
-            // O IndexedSet funciona como uma lista em memória espelhada
             if (LocalDb.CacheDashboard != null && LocalDb.CacheDashboard.Any())
             {
                 var cache = LocalDb.CacheDashboard.FirstOrDefault();
@@ -181,15 +180,17 @@ else
                     dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
                     labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
 
-                    // Já mostramos o que temos no "bolso" para o usuário não ver tela branca
                     _carregando = false;
-                    StateHasChanged();
+
+                    // --- AJUSTE CRÍTICO 1 ---
+                    // Verifica se o componente ainda está renderizado antes de forçar a atualização
+                    // Em métodos async longos, isso evita o erro "No element associated"
+                    await InvokeAsync(StateHasChanged);
                 }
             }
 
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
 
-            // Lógica de buscar conta padrão (Mantida conforme seu original)
             if (idParaBuscar == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
@@ -203,7 +204,7 @@ else
 
             if (idParaBuscar != null)
             {
-                // 2. Busca dados frescos da API na Hostinger
+                // 2. Busca dados frescos da API
                 var dadosApi = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
 
                 if (dadosApi != null)
@@ -212,24 +213,23 @@ else
                     dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
                     labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
 
-                    // 3. Atualiza o Cache Local para a próxima abertura offline
+                    // 3. Atualiza o Cache Local
                     LocalDb.CacheDashboard.Clear();
                     LocalDb.CacheDashboard.Add(dashboard);
-
-                    // O SaveChanges é o que realmente grava no IndexedDB do navegador
                     await LocalDb.SaveChanges();
                 }
             }
         }
         catch (Exception ex)
         {
-            // Se cair aqui (Offline), o usuário continua vendo o que carregamos do cache no passo 1
-            Console.WriteLine($"Dashboard em modo offline: {ex.Message}");
+            Console.WriteLine($"Dashboard em modo offline ou erro: {ex.Message}");
         }
         finally
         {
             _carregando = false;
-            StateHasChanged();
+            // --- AJUSTE CRÍTICO 2 ---
+            // Sempre use InvokeAsync para garantir que estamos na thread correta do UI
+            await InvokeAsync(StateHasChanged);
         }
     }
 }
