@@ -25,10 +25,12 @@
                Fixed="true">
 
         <MudDrawerHeader Class="@(_drawerOpen ? "d-flex align-center justify-start pa-4" : "d-flex align-center justify-center pa-2")">
-            <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="@(_drawerOpen ? "mr-2" : "")" />
+            @* <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="@(_drawerOpen ? "mr-2" : "")" /> *@
+            <MudImage Src="icon-192.png" Alt="Pejota.io Logo" Width="32" Height="32" Class="mr-3 rounded-lg" />
+
             @if (_drawerOpen)
             {
-                <MudText Typo="Typo.h5" Style="font-weight: 700; color: white;">MyFinance</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700; color: white;">Pejota.io</MudText>
             }
         </MudDrawerHeader>
 
