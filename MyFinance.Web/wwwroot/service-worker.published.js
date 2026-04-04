@@ -17,8 +17,16 @@ async function onInstall(event) {
 async function onFetch(event) {
     if (event.request.method !== 'GET') return fetch(event.request);
 
-    // Tenta encontrar no cache primeiro, se não tiver, vai na rede
+    // O segredo do PWA SPA: Se o usuário estiver navegando para qualquer 
+    // rota da aplicação (ex: /dashboard, /lancamentos), nós forçamos 
+    // a entrega do index.html. O roteador do Blazor assume a partir daí.
+    const shouldServeIndexHtml = event.request.mode === 'navigate';
+    const requestToFetch = shouldServeIndexHtml ? 'index.html' : event.request;
+
     const cache = await caches.open(cacheName);
-    const cachedResponse = await cache.match(event.request);
+    const cachedResponse = await cache.match(requestToFetch);
+
+    // Se estiver no cache (e o index.html ESTARÁ), ele retorna na hora.
+    // Se não (uma imagem nova, por exemplo), tenta a rede.
     return cachedResponse || fetch(event.request);
 }
