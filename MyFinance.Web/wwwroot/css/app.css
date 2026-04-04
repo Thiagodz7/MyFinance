@@ -213,3 +213,20 @@ code {
     max-height: 70vh; /* Limita a altura para sobrar espaço para os botões */
     overflow-y: auto;
 }
+
+/* Quando a tela for de celular/tablet (menor que 768px) */
+@media (max-width: 768px) {
+    .mud-snackbar-location-bottom-right {
+        /* Anula a posição original da parte de baixo */
+        bottom: auto !important;
+        /* Joga para o topo com uma margem de respiro */
+        top: 24px !important;
+        /* Centraliza perfeitamente na tela do celular */
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        /* Garante que ocupe um bom espaço na tela pequena */
+        width: 90% !important;
+        max-width: 400px !important;
+    }
+}
