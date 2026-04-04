@@ -2,6 +2,7 @@
 {
     public class DashboardDto
     {
+        public string Id { get; set; } = "dashboard_atual";
         public decimal TotalReceitas { get; set; }
         public decimal TotalDespesas { get; set; }
         public decimal SaldoTotal { get; set; }
