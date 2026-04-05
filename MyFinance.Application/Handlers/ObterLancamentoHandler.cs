@@ -27,7 +27,14 @@ public class ObterLancamentoHandler : IRequestHandler<ObterLancamentoPorIdQuery,
             Data = entity.DataVencimento,
             ContaId = entity.ContaId,
             CategoriaId = entity.CategoriaId,
-            // Preencha o resto conforme seu DTO
+            Pago = entity.Pago,
+
+            // [NOVOS CAMPOS]
+            EhRecorrente = entity.EhRecorrente,
+            Frequencia = (int)entity.Frequencia, // Cast pra inteiro pro select do Blazor
+            ParcelaAtual = entity.ParcelaAtual,
+            TotalParcelas = entity.TotalParcelas,
+            GrupoRecorrenciaId = entity.GrupoRecorrenciaId
         };
     }
 }

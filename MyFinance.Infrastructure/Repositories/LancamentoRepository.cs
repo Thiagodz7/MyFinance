@@ -56,5 +56,23 @@ namespace MyFinance.Infrastructure.Repositories
         {
             _context.Lancamentos.Update(lancamento);
         }
+
+        // =======================================================
+        // [NOVO] O método de inserção em lote para a Recorrência
+        // =======================================================
+        public async Task AddRangeAsync(IEnumerable<Lancamento> lancamentos)
+        {
+            await _context.Lancamentos.AddRangeAsync(lancamentos);
+        }
+
+        public async Task<IEnumerable<Lancamento>> ObterPorGrupoIdAsync(Guid grupoId)
+        {
+            return await _context.Lancamentos.Where(x => x.GrupoRecorrenciaId == grupoId).ToListAsync();
+        }
+
+        public void DeletarVarios(IEnumerable<Lancamento> lancamentos)
+        {
+            _context.Lancamentos.RemoveRange(lancamentos);
+        }
     }
 }

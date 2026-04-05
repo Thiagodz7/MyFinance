@@ -7,4 +7,5 @@
         public decimal SaldoAtual { get; set; }
         public List<LancamentoDto> Lancamentos { get; set; } = new();
     }
+
 }

@@ -20,29 +20,52 @@ namespace MyFinance.Application.Handlers
 
         public async Task<Unit> Handle(DeletarLancamentoCommand request, CancellationToken cancellationToken)
         {
-            // 1. Busca o lançamento para saber o valor e a conta
+            // 1. Busca o lançamento alvo (IMPORTANTE: Sem AsNoTracking para o EF poder deletar)
             var lancamento = await _repository.GetByIdAsync(request.Id);
+            if (lancamento == null) throw new Exception("Lançamento não encontrado.");
 
-            if (lancamento == null)
-            {
-                throw new Exception("Lançamento não encontrado.");
-            }
-
-            // 2. Busca a conta vinculada
             var conta = await _contaRepository.GetByIdAsync(lancamento.ContaId);
-            
-            if (conta == null)
+            if (conta == null) throw new Exception("Conta não encontrada.");
+
+            var lancamentosParaDeletar = new List<Lancamento>();
+
+            if (request.TipoExclusao == TipoExclusaoRecorrencia.ApenasEste || !lancamento.GrupoRecorrenciaId.HasValue)
             {
-                throw new Exception("Conta não encontrada.");
+                lancamentosParaDeletar.Add(lancamento);
+            }
+            else
+            {
+                // 2. Busca todos os irmãos do grupo
+                var irmaos = await _repository.ObterPorGrupoIdAsync(lancamento.GrupoRecorrenciaId.Value);
+
+                if (request.TipoExclusao == TipoExclusaoRecorrencia.EsteEProximos)
+                {
+                    // CORREÇÃO: Comparamos apenas a DATA, ignorando horas que podem causar falha no filtro >=
+                    // Além disso, garantimos que a lista não esteja vazia
+                    lancamentosParaDeletar = irmaos
+                        .Where(x => x.DataVencimento.Date >= lancamento.DataVencimento.Date)
+                        .ToList();
+                }
+                else if (request.TipoExclusao == TipoExclusaoRecorrencia.TodosDoGrupo)
+                {
+                    lancamentosParaDeletar = irmaos.ToList();
+                }
+
+                // SEGURANÇA: Se por algum motivo o principal não estiver na lista de irmãos filtrada, adicionamos ele
+                if (!lancamentosParaDeletar.Any(x => x.Id == lancamento.Id))
+                {
+                    lancamentosParaDeletar.Add(lancamento);
+                }
             }
 
-            // 3. REVERSÃO: Passamos o valor invertido para o método que você já criou
-            // Se deletar uma despesa de -50, passamos -(-50) = +50 (devolve o dinheiro)
-            conta.AtualizarSaldo(-lancamento.Valor);
+            // 3. Soma o valor real e reverte o saldo
+            var valorTotalReverter = lancamentosParaDeletar.Sum(x => x.Valor);
+            conta.AtualizarSaldo(-valorTotalReverter);
 
-            // 4. Persistência
             await _contaRepository.UpdateAsync(conta.Id, conta, cancellationToken);
-            _repository.Deletar(lancamento);
+
+            // 4. Executa a deleção em lote
+            _repository.DeletarVarios(lancamentosParaDeletar);
 
             await _uow.CommitAsync();
             return Unit.Value;

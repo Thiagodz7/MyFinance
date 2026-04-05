@@ -2,6 +2,13 @@
 
 namespace MyFinance.Domain.Entities
 {
+    public enum TipoFrequencia
+    {
+        Nenhuma = 0,
+        Semanal = 1,
+        Mensal = 2,
+        Anual = 3
+    }
     public class Lancamento : BaseEntity, IEntityComDono
     {
         // Propriedades "private set" para garantir encapsulamento. 
@@ -21,6 +28,17 @@ namespace MyFinance.Domain.Entities
 
         public Categoria Categoria { get; private set; }
         public string UserId { get; private set; } = string.Empty;
+
+        // --- [NOVOS CAMPOS DE RECORRÊNCIA] ---
+        public bool EhRecorrente { get; private set; }
+        public TipoFrequencia Frequencia { get; private set; }
+        public int ParcelaAtual { get; private set; }
+        public int TotalParcelas { get; private set; }
+
+        // Agrupa os lançamentos para edição/exclusão em lote no futuro
+        public Guid? GrupoRecorrenciaId { get; private set; }
+
+
         //Construtor após a Refatoração para incluir ContaId
         // [ATUALIZADO] Adicione contaId no construtor
         public Lancamento(string descricao, decimal valor, DateTime dataVencimento, Guid contaId, Guid categoriaId)
@@ -34,7 +52,7 @@ namespace MyFinance.Domain.Entities
             if (contaId == Guid.Empty)
                 throw new Exception("Conta inválida");
 
-            if(categoriaId == Guid.Empty)
+            if (categoriaId == Guid.Empty)
                 throw new Exception("Categioria inválida");
 
             Descricao = descricao;
@@ -43,14 +61,20 @@ namespace MyFinance.Domain.Entities
             ContaId = contaId;
             CategoriaId = categoriaId;
             Pago = false;
-        }   
+
+            // Valores padrão para lançamentos normais
+            EhRecorrente = false;
+            Frequencia = TipoFrequencia.Nenhuma;
+            ParcelaAtual = 1;
+            TotalParcelas = 1;
+        }
 
         public void MarcarComoPago() => Pago = true;
 
         public void Atualizar(string descricao, decimal valor, DateTime dtVencimento)
         {
             Descricao = descricao;
-            Valor = valor;  
+            Valor = valor;
             DataVencimento = dtVencimento;
         }
 
@@ -60,6 +84,17 @@ namespace MyFinance.Domain.Entities
             {
                 UserId = userId;
             }
+        }
+
+        // --- [NOVO MÉTODO] ---
+        // Configura este lançamento como parte de uma assinatura/recorrência
+        public void ConfigurarRecorrencia(TipoFrequencia frequencia, int parcelaAtual, int totalParcelas, Guid grupoRecorrenciaId)
+        {
+            EhRecorrente = true;
+            Frequencia = frequencia;
+            ParcelaAtual = parcelaAtual;
+            TotalParcelas = totalParcelas;
+            GrupoRecorrenciaId = grupoRecorrenciaId;
         }
     }
 }

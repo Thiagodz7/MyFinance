@@ -7,13 +7,24 @@
         public decimal TotalDespesas { get; set; }
         public decimal SaldoTotal { get; set; }
 
-        // Para o Gráfico de Rosca (Top categorias de despesa)
         public List<DashboardCategoriaDto> DespesasPorCategoria { get; set; } = new();
+
+        // [NOVO] Para o Gráfico de Barras (Previsibilidade)
+        public List<DashboardPrevisaoDto> PrevisaoProximosMeses { get; set; } = new();
     }
 
     public class DashboardCategoriaDto
     {
         public string Categoria { get; set; } = string.Empty;
-        public decimal Valor { get; set; } // Valor absoluto (sem sinal negativo)
+        public decimal Valor { get; set; }
+    }
+
+    // [NOVO]
+    public class DashboardPrevisaoDto
+    {
+        public string Mes { get; set; } = string.Empty;
+        public decimal Receitas { get; set; } // [NOVO]
+        public decimal Despesas { get; set; } // [NOVO]
+        public decimal SaldoPrevisto { get; set; }
     }
 }

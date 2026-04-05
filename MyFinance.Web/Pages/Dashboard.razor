@@ -2,11 +2,37 @@
 @using MyFinance.Web.DTOs
 @using MyFinance.Web.Services
 @using MyFinance.Web.Shared
+@using System.Globalization
 @inject HttpClient Http
 @inject PageStateService PageState
 @implements IDisposable
 @inject FinanceStateService FinanceState
 @inject MyFinanceLocalDb LocalDb
+
+<style>
+    /* Estilos Premium para a Tabela de Previsão */
+    .previsao-row {
+        transition: all 0.2s ease-in-out;
+        cursor: default;
+    }
+
+        .previsao-row:hover {
+            background-color: #F8FAFC !important;
+            transform: translateX(4px); /* Animação lateral suave */
+        }
+
+    .previsao-card {
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: white;
+    }
+
+    .header-table {
+        background-color: #F1F5F9;
+        border-bottom: 2px solid #E2E8F0;
+    }
+</style>
 
 <PageTitle>Dashboard - Pejota.io</PageTitle>
 
@@ -71,34 +97,19 @@ else
                     <MudText Typo="Typo.h6" Style="font-weight: 700;">Distribuição de Gastos</MudText>
                 </div>
 
-                @* Renderização Atômica: Capturamos os dados em variáveis locais para evitar IndexOutOfRange *@
-                @{
-                    var dadosLocais = dataGrafico;
-                    var labelsLocais = labelsGrafico;
-                }
-
-                @if (dadosLocais != null && labelsLocais != null && dadosLocais.Length > 0 && dadosLocais.Length == labelsLocais.Length)
+                @if (dataGrafico != null && dataGrafico.Length > 0)
                 {
                     <div class="d-flex flex-column align-center">
                         <div class="d-flex justify-center align-center" style="width: 100%; min-height: 250px;">
-                            <MudChart ChartType="ChartType.Donut"
-                                      Width="220px"
-                                      Height="220px"
-                                      InputData="@dadosLocais"
-                                      InputLabels="@labelsLocais"
-                                      ChartOptions="@_chartOptions" />
+                            <MudChart ChartType="ChartType.Donut" Width="220px" Height="220px" InputData="@dataGrafico" InputLabels="@labelsGrafico" ChartOptions="@_chartOptions" />
                         </div>
-
-                        @* Legenda Manual Segura (Unificada PC/Mobile) *@
                         <div class="d-flex flex-wrap justify-center gap-4 mt-6">
-                            @for (int i = 0; i < labelsLocais.Length; i++)
+                            @for (int i = 0; i < labelsGrafico.Length; i++)
                             {
                                 var localIndex = i;
                                 <div class="d-flex align-center">
                                     <div style="@($"width:12px; height:12px; border-radius:50%; background-color:{_chartOptions.ChartPalette[localIndex % _chartOptions.ChartPalette.Length]}; margin-right:8px;")"></div>
-                                    <MudText Typo="Typo.caption" Style="color: #1E293B; font-weight: 500;">
-                                        @labelsLocais[localIndex]
-                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="color: #1E293B; font-weight: 500;">@labelsGrafico[localIndex]: <b>@dataGrafico[localIndex].ToString("C2")</b></MudText>
                                 </div>
                             }
                         </div>
@@ -116,10 +127,7 @@ else
         <MudItem xs="12" md="5">
             <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; background-color: #F8FAFC; height: 100%;">
                 <MudText Typo="Typo.h6" Style="font-weight: 700;" Class="mb-4">Insights Financeiros</MudText>
-                <MudAlert Severity="Severity.Info" Variant="Variant.Filled" DropShadow="false" Class="mb-4 rounded-lg">
-                    Seu lucro aumentou 12% em relação ao mês passado! 🚀
-                </MudAlert>
-
+                <MudAlert Severity="Severity.Info" Variant="Variant.Filled" DropShadow="false" Class="mb-4 rounded-lg">Seu lucro aumentou 12% em relação ao mês passado! 🚀</MudAlert>
                 <div class="d-flex flex-column gap-4">
                     <div class="d-flex align-center justify-space-between">
                         <MudText Typo="Typo.body2" Style="color: #64748B;">Análise Tributária PJ</MudText>
@@ -133,19 +141,75 @@ else
                 </div>
             </MudPaper>
         </MudItem>
+
+        <MudItem xs="12">
+            <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px;">
+                <div class="d-flex align-center justify-space-between mb-6">
+                    <div class="d-flex align-center">
+                        <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Info" Class="mr-2" />
+                        <MudText Typo="Typo.h6" Style="font-weight: 700;">Previsibilidade de Caixa</MudText>
+                    </div>
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text" Icon="@Icons.Material.Filled.CalendarMonth">PRÓXIMOS 6 MESES</MudChip>
+                </div>
+
+                @if (seriesPrevisao.Any(s => s.Data.Any(v => v != 0)))
+                {
+                    <MudGrid>
+                        <MudItem xs="12" lg="7">
+                            <MudChart ChartType="ChartType.Line" ChartSeries="@seriesPrevisao" XAxisLabels="@labelsPrevisao" Width="100%" Height="320px" ChartOptions="@_lineOptions" />
+                        </MudItem>
+
+                        <MudItem xs="12" lg="5">
+                            <div class="previsao-card">
+                                <table class="w-100" style="border-collapse: collapse;">
+                                    <thead class="header-table">
+                                        <tr>
+                                            <th class="pa-3 text-start"><MudText Typo="Typo.caption" Style="font-weight: 800;">MÊS</MudText></th>
+                                            <th class="pa-3 text-end"><MudText Typo="Typo.caption" Style="font-weight: 800; color: #10B981;">ENTRADAS</MudText></th>
+                                            <th class="pa-3 text-end"><MudText Typo="Typo.caption" Style="font-weight: 800; color: #EF4444;">SAÍDAS</MudText></th>
+                                            <th class="pa-3 text-end"><MudText Typo="Typo.caption" Style="font-weight: 800; color: #3B82F6;">SALDO</MudText></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in dashboard.PrevisaoProximosMeses)
+                                        {
+                                            <tr class="previsao-row" style="border-bottom: 1px solid #F1F5F9;">
+                                                <td class="pa-3"><MudText Typo="Typo.body2" Style="font-weight: 700; color: #475569;">@item.Mes</MudText></td>
+                                                <td class="pa-3 text-end"><MudText Typo="Typo.body2" Color="Color.Success">@item.Receitas.ToString("C2")</MudText></td>
+                                                <td class="pa-3 text-end"><MudText Typo="Typo.body2" Color="Color.Error">@item.Despesas.ToString("C2")</MudText></td>
+                                                <td class="pa-3 text-end" style="background-color: #F8FAFC;"><MudText Typo="Typo.body2" Style="font-weight: 800; color: #1E293B;">@item.SaldoPrevisto.ToString("C2")</MudText></td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </MudItem>
+                    </MudGrid>
+                }
+                else
+                {
+                    <div class="d-flex align-center justify-center" style="height: 150px; border: 2px dashed #E2E8F0; border-radius: 12px;">
+                        <MudText Style="color: #94A3B8;">Ative a recorrência em seus lançamentos para ver a projeção detalhada.</MudText>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 }
 
 @code {
     private DashboardDto? dashboard;
     private bool _carregando = true;
-    private double[] dataGrafico = { };
-    private string[] labelsGrafico = { };
-    private ChartOptions _chartOptions = new ChartOptions()
-    {
-        ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981", "#EC4899" },
-        ShowLegend = false
-    };
+
+    // Configurações Pizza
+    private double[] dataGrafico = Array.Empty<double>();
+    private string[] labelsGrafico = Array.Empty<string>();
+    private ChartOptions _chartOptions = new() { ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981" }, ShowLegend = false };
+
+    // Configurações Linha
+    private List<ChartSeries> seriesPrevisao = new();
+    private string[] labelsPrevisao = Array.Empty<string>();
+    private ChartOptions _lineOptions = new() { ChartPalette = new[] { "#10B981", "#EF4444", "#3B82F6" }, YAxisLines = true, XAxisLines = false, InterpolationOption = InterpolationOption.NaturalSpline };
 
     public void Dispose() => FinanceState.OnAccountChanged -= HandleAccountChanged;
 
@@ -158,11 +222,7 @@ else
 
     private async void HandleAccountChanged()
     {
-        await InvokeAsync(async () =>
-        {
-            await CarregarDadosDashboard();
-            StateHasChanged();
-        });
+        await InvokeAsync(async () => { await CarregarDadosDashboard(); StateHasChanged(); });
     }
 
     public async Task CarregarDadosDashboard()
@@ -170,29 +230,13 @@ else
         try
         {
             _carregando = true;
-            // Remova o StateHasChanged() inicial, deixe o Blazor renderizar no tempo dele
-
-            // 1. Tenta carregar do Cache Local IMEDIATAMENTE
             if (LocalDb.CacheDashboard != null && LocalDb.CacheDashboard.Any())
             {
                 var cache = LocalDb.CacheDashboard.FirstOrDefault();
-                if (cache != null)
-                {
-                    dashboard = cache;
-                    dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
-                    labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
-
-                    _carregando = false;
-
-                    // --- AJUSTE CRÍTICO 1 ---
-                    // Verifica se o componente ainda está renderizado antes de forçar a atualização
-                    // Em métodos async longos, isso evita o erro "No element associated"
-                    await InvokeAsync(StateHasChanged);
-                }
+                if (cache != null) { dashboard = cache; MapearGraficos(); _carregando = false; await InvokeAsync(StateHasChanged); }
             }
 
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
-
             if (idParaBuscar == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
@@ -206,32 +250,53 @@ else
 
             if (idParaBuscar != null)
             {
-                // 2. Busca dados frescos da API
                 var dadosApi = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
-
                 if (dadosApi != null)
                 {
                     dashboard = dadosApi;
-                    dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
-                    labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
-
-                    // 3. Atualiza o Cache Local
+                    MapearGraficos();
                     LocalDb.CacheDashboard.Clear();
                     LocalDb.CacheDashboard.Add(dashboard);
                     await LocalDb.SaveChanges();
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception ex) { Console.WriteLine(ex.Message); }
+        finally { _carregando = false; await InvokeAsync(StateHasChanged); }
+    }
+
+    private void MapearGraficos()
+    {
+        if (dashboard == null) return;
+
+        // Donut
+        dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
+        labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
+
+        // Previsão
+        if (dashboard.PrevisaoProximosMeses != null)
         {
-            Console.WriteLine($"Dashboard em modo offline ou erro: {ex.Message}");
-        }
-        finally
-        {
-            _carregando = false;
-            // --- AJUSTE CRÍTICO 2 ---
-            // Sempre use InvokeAsync para garantir que estamos na thread correta do UI
-            await InvokeAsync(StateHasChanged);
+            var culturaPt = new CultureInfo("pt-BR");
+
+            // Tradução e formatação robusta dos meses
+            foreach (var item in dashboard.PrevisaoProximosMeses)
+            {
+                // Se o backend enviar "APR" ou "APR.", tentamos converter.
+                // Usamos uma lista de formatos conhecidos para garantir.
+                string[] formats = { "MMM", "MMM.", "MMMM" };
+                if (DateTime.TryParseExact(item.Mes.TrimEnd('.'), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+                {
+                    item.Mes = dt.ToString("MMM", culturaPt).ToUpper().Replace(".", "");
+                }
+            }
+
+            labelsPrevisao = dashboard.PrevisaoProximosMeses.Select(x => x.Mes).ToArray();
+            seriesPrevisao = new List<ChartSeries>
+            {
+                new ChartSeries { Name = "Receitas", Data = dashboard.PrevisaoProximosMeses.Select(x => (double)x.Receitas).ToArray() },
+                new ChartSeries { Name = "Despesas", Data = dashboard.PrevisaoProximosMeses.Select(x => (double)x.Despesas).ToArray() },
+                new ChartSeries { Name = "Saldo Projetado", Data = dashboard.PrevisaoProximosMeses.Select(x => (double)x.SaldoPrevisto).ToArray() }
+            };
         }
     }
 }

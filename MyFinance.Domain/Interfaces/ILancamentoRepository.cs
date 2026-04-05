@@ -11,5 +11,10 @@ namespace MyFinance.Domain.Interfaces
         void Deletar(Lancamento lancamento);
         void Update(Lancamento lancamento);
         Task<Lancamento?> GetByIdAsync(Guid id);
+
+        // [NOVO] Adicionado para salvar recorrências em lote com alta performance
+        Task AddRangeAsync(IEnumerable<Lancamento> lancamentos);
+        Task<IEnumerable<Lancamento>> ObterPorGrupoIdAsync(Guid grupoId);
+        void DeletarVarios(IEnumerable<Lancamento> lancamentos);
     }
 }

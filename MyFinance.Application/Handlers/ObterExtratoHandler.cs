@@ -43,7 +43,15 @@ namespace MyFinance.Application.Handlers
                     Data = l.DataVencimento,
                     Tipo = l.Valor >= 0 ? "Receita" : "Despesa",
                     CategoriaId = l.CategoriaId,
-                    ContaId = l.ContaId
+                    ContaId = l.ContaId,
+                    Pago = l.Pago,
+
+                    // [NOVOS CAMPOS]
+                    EhRecorrente = l.EhRecorrente,
+                    Frequencia = (int)l.Frequencia,
+                    ParcelaAtual = l.ParcelaAtual,
+                    TotalParcelas = l.TotalParcelas,
+                    GrupoRecorrenciaId = l.GrupoRecorrenciaId
                 }).ToList()
             };
         }

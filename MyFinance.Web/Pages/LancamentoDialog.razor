@@ -27,22 +27,18 @@
             <MudItem xs="6">
                 @* --- VERSÃO PC: Calendário elegante do MudBlazor --- *@
                 <MudHidden Breakpoint="Breakpoint.SmAndDown">
-    
-                      <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" /> 
+                    <MudDatePicker Label="Data" @bind-Date="DataVencimento" Variant="Variant.Outlined" Margin="Margin.Dense" />
                 </MudHidden>
 
                 @* --- VERSÃO MOBILE: Seletor Nativo do Android/iOS --- *@
                 <MudHidden Breakpoint="Breakpoint.MdAndUp">
-                    <MudHidden Breakpoint="Breakpoint.MdAndUp">
-                        <MudTextField T="DateTime?"
-                                      Label="Data"
-                                      @bind-Value="DataVencimento"
-                                      InputType="InputType.Date"
-                                      Variant="Variant.Outlined"
-                                      Margin="Margin.Dense"
-                                      Format="yyyy-MM-dd"
-                                      InputAttributes="@(new Dictionary<string, object> { { "step", "1" } })" />
-                    </MudHidden>
+                    <MudTextField T="DateTime?"
+                                  Label="Data"
+                                  @bind-Value="DataVencimento"
+                                  InputType="InputType.Date"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Format="yyyy-MM-dd" />
                 </MudHidden>
             </MudItem>
 
@@ -70,6 +66,25 @@
                     <MudText Typo="Typo.caption" Color="Color.Warning">Categoria fixa na edição.</MudText>
                 }
             </MudItem>
+
+            @* --- [ADICIONADO] BLOCO DE RECORRÊNCIA --- *@
+            <MudItem xs="12">
+                <MudSwitch @bind-Value="EhRecorrente" Label="Repetir lançamento" Color="Color.Primary" />
+            </MudItem>
+
+            @if (EhRecorrente)
+            {
+                <MudItem xs="6">
+                    <MudSelect T="int" Label="Frequência" @bind-Value="Frequencia" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem Value="1">Semanal</MudSelectItem>
+                        <MudSelectItem Value="2">Mensal</MudSelectItem>
+                        <MudSelectItem Value="3">Anual</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudNumericField @bind-Value="TotalParcelas" Label="Parcelas" Variant="Variant.Outlined" Margin="Margin.Dense" Min="2" Max="120" />
+                </MudItem>
+            }
         </MudGrid>
     </DialogContent>
     <DialogActions>
@@ -92,12 +107,17 @@
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     [Parameter] public Guid ContaId { get; set; }
-    [Parameter] public LancamentoDto? LancamentoEditar { get; set; } // O segredo da edição
+    [Parameter] public LancamentoDto? LancamentoEditar { get; set; }
 
     public string Descricao { get; set; } = string.Empty;
     public decimal Valor { get; set; } = 0;
     public string TipoSelecionado { get; set; } = "Despesa";
     public DateTime? DataVencimento { get; set; } = DateTime.Today;
+
+    // --- NOVOS CAMPOS ---
+    public bool EhRecorrente { get; set; }
+    public int Frequencia { get; set; } = 2;
+    public int TotalParcelas { get; set; } = 2;
 
     private CategoriaDto? _categoriaSelecionada;
     private List<CategoriaDto>? categorias;
@@ -121,6 +141,11 @@
                 Descricao = LancamentoEditar.Descricao;
                 DataVencimento = LancamentoEditar.Data;
 
+                // Mapeamento dos novos campos na edição
+                EhRecorrente = LancamentoEditar.EhRecorrente;
+                Frequencia = LancamentoEditar.Frequencia > 0 ? LancamentoEditar.Frequencia : 2;
+                TotalParcelas = LancamentoEditar.TotalParcelas > 0 ? LancamentoEditar.TotalParcelas : 2;
+
                 if (LancamentoEditar.Valor < 0)
                 {
                     TipoSelecionado = "Despesa";
@@ -132,7 +157,6 @@
                     Valor = LancamentoEditar.Valor;
                 }
 
-                // Pré-seleciona a categoria baseada no ID (DTO precisa ter CategoriaId)
                 if (categorias != null)
                 {
                     _categoriaSelecionada = categorias.FirstOrDefault(c => c.Id == LancamentoEditar.CategoriaId);
@@ -140,8 +164,6 @@
             }
             else
             {
-                // --- MODO CRIAÇÃO ---
-                // Seleciona a primeira categoria automaticamente (UX)
                 if (categorias != null && categorias.Any())
                 {
                     OnCategoriaChanged(categorias.First());
@@ -157,7 +179,6 @@
     private void OnCategoriaChanged(CategoriaDto categoria)
     {
         _categoriaSelecionada = categoria;
-        // Só muda o tipo automaticamente se for CRIAÇÃO. Na edição, respeitamos o que veio do banco.
         if (categoria != null && LancamentoEditar == null)
         {
             TipoSelecionado = categoria.Tipo;
@@ -174,7 +195,6 @@
             return;
         }
 
-        // Validação de categoria só se for criação (na edição ela pode vir nula se não mudarmos, mas visualmente está disabled)
         if (LancamentoEditar == null && _categoriaSelecionada == null)
         {
             Snackbar.Add("Selecione uma categoria.", Severity.Warning);
@@ -187,44 +207,39 @@
         {
             decimal valorFinal = TipoSelecionado == "Despesa" ? Math.Abs(Valor) * -1 : Math.Abs(Valor);
 
+            // Command unificado enviando os dados de recorrência
+            var command = new
+            {
+                Id = LancamentoEditar?.Id ?? Guid.Empty,
+                Descricao = Descricao,
+                Valor = valorFinal,
+                DataVencimento = DataVencimento ?? DateTime.Now,
+                ContaId = ContaId,
+                CategoriaId = _categoriaSelecionada?.Id ?? Guid.Empty,
+                EhRecorrente = EhRecorrente,
+                Frequencia = Frequencia,
+                TotalParcelas = TotalParcelas
+            };
+
+            HttpResponseMessage response;
+
             if (LancamentoEditar == null)
             {
-                // POST: Criar
-                var command = new
-                {
-                    Descricao = Descricao,
-                    Valor = valorFinal,
-                    DataVencimento = DataVencimento ?? DateTime.Now,
-                    ContaId = ContaId,
-                    CategoriaId = _categoriaSelecionada!.Id
-                };
-                var response = await Http.PostAsJsonAsync("api/lancamentos", command);
-                if (response.IsSuccessStatusCode) MudDialog.Close(DialogResult.Ok(true));
-                else Snackbar.Add("Erro ao criar.", Severity.Error);
+                response = await Http.PostAsJsonAsync("api/lancamentos", command);
             }
             else
             {
-                // PUT: Editar (Usa a estrutura do seu Command C#)
-                var command = new
-                {
-                    Id = LancamentoEditar.Id,
-                    Descricao = Descricao,
-                    Valor = valorFinal,
-                    DataVencimento = DataVencimento ?? DateTime.Now
-                    // Note: Não enviamos CategoriaId nem ContaId, pois o backend ignora/não permite
-                };
+                response = await Http.PutAsJsonAsync($"api/lancamentos/{LancamentoEditar.Id}", command);
+            }
 
-                var response = await Http.PutAsJsonAsync($"api/lancamentos/{LancamentoEditar.Id}", command);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    Snackbar.Add("Atualizado com sucesso!", Severity.Success);
-                    MudDialog.Close(DialogResult.Ok(true));
-                }
-                else
-                {
-                    Snackbar.Add("Erro ao atualizar.", Severity.Error);
-                }
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add(LancamentoEditar == null ? "Lançamento criado!" : "Atualizado com sucesso!", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add("Erro ao salvar operação.", Severity.Error);
             }
         }
         catch (Exception ex)

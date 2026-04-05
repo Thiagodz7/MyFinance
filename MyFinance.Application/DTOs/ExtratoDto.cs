@@ -19,5 +19,14 @@
         public string Categoria { get; set; } = string.Empty;
         public Guid ContaId { get; set; }
         public Guid CategoriaId { get; set; }
+        public bool Pago { get; set; } // Adicionado pois você precisará saber na UI se já foi compensado
+
+
+        // --- [NOVOS CAMPOS PARA O FRONT-END] ---
+        public bool EhRecorrente { get; set; }
+        public int Frequencia { get; set; } // Enviamos como Int para facilitar o bind no MudSelect do Blazor
+        public int ParcelaAtual { get; set; }
+        public int TotalParcelas { get; set; }
+        public Guid? GrupoRecorrenciaId { get; set; }
     }
 }

@@ -28,11 +28,12 @@ namespace MyFinance.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid id)
+        public async Task<IActionResult> Delete(Guid id, [FromQuery] TipoExclusaoRecorrencia tipoExclusao)
         {
             try
             {
-                await _mediator.Send(new DeletarLancamentoCommand(id));
+                // Agora passamos o tipoExclusao que veio da URL para o Command!
+                await _mediator.Send(new DeletarLancamentoCommand(id, tipoExclusao));
                 return NoContent();
             }
             catch (Exception ex)

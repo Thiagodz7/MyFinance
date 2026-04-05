@@ -7,6 +7,42 @@
 @inject MyFinance.Web.Services.PageStateService PageState
 @inject ISnackbar Snackbar
 
+<style>
+    /* CSS Isolatado para a modal de exclusão */
+    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-primary {
+        color: #fb8c00 !important;
+        font-weight: 800 !important;
+    }
+
+        .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-primary:hover {
+            background-color: #fb8c00 !important;
+            color: white !important;
+        }
+
+    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-secondary {
+        color: #f44336 !important;
+        font-weight: 800 !important;
+    }
+
+        .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-secondary:hover {
+            background-color: #f44336 !important;
+            color: white !important;
+        }
+
+    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-default:hover {
+        background-color: #9e9e9e !important;
+        color: white !important;
+    }
+
+    .op-box {
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 8px;
+        font-size: 0.9rem;
+        border-left: 4px solid;
+    }
+</style>
+
 <PageTitle>Lançamentos - Pejota.io</PageTitle>
 
 @implements IDisposable
@@ -61,28 +97,34 @@ else
             <MudTh>Descrição</MudTh>
             <MudTh>Categoria</MudTh>
             <MudTh>Valor</MudTh>
+            <MudTh>Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Data">@context.Data.ToString("dd/MM/yyyy")</MudTd>
-            <MudTd DataLabel="Descrição">@context.Descricao</MudTd>
+            <MudTd DataLabel="Descrição">
+                <div class="d-flex align-center">
+                    @context.Descricao
+                    @if (context.EhRecorrente)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text" Class="ml-2">
+                            @context.ParcelaAtual/@context.TotalParcelas
+                        </MudChip>
+                    }
+                </div>
+            </MudTd>
             <MudTd DataLabel="Categoria">
                 <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
                     @context.Categoria
                 </MudChip>
             </MudTd>
             <MudTd DataLabel="Valor">
-                <MudText Color="@(context.Valor >= 0 ? Color.Success : Color.Error)">
+                <MudText Color="@(context.Valor >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
                     @context.Valor.ToString("C2")
                 </MudText>
             </MudTd>
             <MudTd DataLabel="Ações">
-                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                               Color="Color.Warning"
-                               OnClick="@(() => AbrirDialog(context))" />
-
-                <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                               Color="Color.Error"
-                               OnClick="@(() => ConfirmarExclusao(context.Id))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(() => AbrirDialog(context))" />
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => ConfirmarExclusaoComOpcoes(context))" />
             </MudTd>
         </RowTemplate>
     </MudTable>
@@ -92,18 +134,102 @@ else
     private ExtratoDto? extrato;
     private bool _carregando = true;
 
+    public enum TipoExclusaoRecorrencia
+    {
+        ApenasEste = 0,
+        EsteEProximos = 1,
+        TodosDoGrupo = 2
+    }
+
+    private async Task ConfirmarExclusaoComOpcoes(LancamentoDto lancamento)
+    {
+        // Definimos uma classe específica para esta modal não afetar a de "Editar"
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+            BackgroundClass = "modal-exclusao-pejota" // Isso isola o CSS
+        };
+
+        if (lancamento.EhRecorrente)
+        {
+            var msn = $@"
+            <div style='display: flex; flex-direction: column; gap: 12px;'>
+                <p>Este item faz parte de uma <b>recorrência</b>.</p>
+                <div class='op-box' style='background-color: #FFF4E5; border-color: #fb8c00; color: #663C00;'>
+                    <b>OPÇÃO 1:</b> Apaga apenas a parcela de <b>{lancamento.Data:dd/MM/yyyy}</b>.
+                </div>
+                <div class='op-box' style='background-color: #FFEBEE; border-color: #f44336; color: #B71C1C;'>
+                    <b>OPÇÃO 2:</b> Apaga esta e <b>TODAS AS FUTURAS</b>.
+                </div>
+            </div>";
+
+            var result = await DialogService.ShowMessageBox(
+                "Segurança: Recorrência",
+                (MarkupString)msn,
+                yesText: "APENAS ESTE",
+                noText: "ESTE E PRÓXIMOS",
+                cancelText: "CANCELAR",
+                options: options
+            );
+
+            if (result == true) await ExecutarExclusao(lancamento.Id, TipoExclusaoRecorrencia.ApenasEste);
+            else if (result == false) await ExecutarExclusao(lancamento.Id, TipoExclusaoRecorrencia.EsteEProximos);
+        }
+        else
+        {
+            var result = await DialogService.ShowMessageBox(
+                "Confirmar Exclusão",
+                (MarkupString)$"Deseja apagar <b>'{lancamento.Descricao}'</b>?",
+                yesText: "EXCLUIR",
+                cancelText: "CANCELAR",
+                options: options
+            );
+            if (result == true) await ExecutarExclusao(lancamento.Id, TipoExclusaoRecorrencia.ApenasEste);
+        }
+    }
+
+    private async Task ExecutarExclusao(Guid id, TipoExclusaoRecorrencia tipoExclusao)
+    {
+        try
+        {
+            var valor = (int)tipoExclusao;
+            // O nome do parâmetro na URL deve ser EXATAMENTE 'tipoExclusao' (igual ao nome no argumento do Controller)
+            var url = $"api/Lancamentos/{id}?tipoExclusao={valor}";
+
+            Console.WriteLine($"Chamando URL: {url}"); 
+
+            var response = await Http.DeleteAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Excluído com sucesso!", Severity.Success);
+                FinanceState.SetAccount(FinanceState.SelectedAccountId, FinanceState.SelectedAccountName);
+                await CarregarExtrato();
+                StateHasChanged();
+            }
+            else
+            {
+                var erro = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro ao excluir: {erro}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro crítico: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task AbrirDialog(LancamentoDto? lancamentoParaEditar = null)
     {
         if (extrato == null) return;
 
         var parameters = new DialogParameters();
         parameters.Add("ContaId", extrato.ContaId);
-
-        // Passa o objeto se for edição (ou null se for criação)
         parameters.Add("LancamentoEditar", lancamentoParaEditar);
 
         var title = lancamentoParaEditar == null ? "Novo Lançamento" : "Editar Lançamento";
-
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 
         var dialog = await DialogService.ShowAsync<LancamentoDialog>(title, parameters, options);
@@ -111,7 +237,6 @@ else
 
         if (!result!.Canceled)
         {
-            // Recarrega lista e atualiza cabeçalho global
             await CarregarExtrato();
             FinanceState.SetAccount(FinanceState.SelectedAccountId, FinanceState.SelectedAccountName);
         }
@@ -122,22 +247,22 @@ else
         try
         {
             _carregando = true;
-            
             var idContaSelecionada = FinanceState.SelectedAccountId;
-            if (idContaSelecionada != null)
+
+            if (idContaSelecionada != null && idContaSelecionada != Guid.Empty)
             {
                 extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{idContaSelecionada}/extrato");
             }
             else
             {
-                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/Contas");
+                var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
 
                 if ((contas != null && contas.Any()))
                 {
-                    var contaId = contas.First().Id;
-                    extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaId}/extrato");
-                    FinanceState.SetAccount(contaId, contas.First().Nome);
-                }            
+                    var contaAtiva = contas.FirstOrDefault(c => c.Ativo) ?? contas.First();
+                    extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaAtiva.Id}/extrato");
+                    FinanceState.SetAccount(contaAtiva.Id, contaAtiva.Nome);
+                }
             }
         }
         catch (Exception ex)
@@ -149,7 +274,6 @@ else
             _carregando = false;
         }
     }
-
 
     public void Dispose()
     {
@@ -170,58 +294,5 @@ else
             await CarregarExtrato();
             StateHasChanged();
         });
-    }
-
-    private async Task ConfirmarExclusao(Guid id)
-    {
-        // 1. Configura o Modal de Confirmação
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall };
-        var parameters = new DialogParameters<MudDialog>
-        {
-            { "ContentText", "Deseja realmente excluir este lançamento? Esta ação não pode ser desfeita." },
-            { "ButtonText", "Excluir" },
-            { "Color", Color.Error }
-        };
-
-        // 2. Abre o Modal (estamos usando um Dialog padrão do MudBlazor aqui para simplificar)
-        var dialog = await DialogService.ShowMessageBox(
-            "Atenção",
-            "Deseja realmente excluir este lançamento?",
-            yesText: "Excluir",
-            cancelText: "Cancelar"
-        );
-
-        if (dialog == true)
-        {
-            await ExecutarExclusao(id);
-        }
-    }
-
-    private async Task ExecutarExclusao(Guid id)
-    {
-        try
-        {
-            var response = await Http.DeleteAsync($"api/Lancamentos/{id}");
-
-            if (response.IsSuccessStatusCode)
-            {
-                Snackbar.Add("Lançamento excluído com sucesso!", Severity.Success);
-
-                // 3. ATENÇÃO: Avisamos o sistema que a conta mudou para
-                // o Dashboard e o Saldo no Header atualizarem!
-                FinanceState.SetAccount(FinanceState.SelectedAccountId, FinanceState.SelectedAccountName);
-
-                // 4. Recarrega a lista da página atual
-                await CarregarExtrato();
-            }
-            else
-            {
-                Snackbar.Add("Erro ao excluir o lançamento.", Severity.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Erro crítico: {ex.Message}", Severity.Error);
-        }
     }
 }
