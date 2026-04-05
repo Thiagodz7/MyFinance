@@ -9,7 +9,8 @@ namespace MyFinance.Application.Handlers
     {
         private readonly IContaRepository _contaRepo;
         private readonly ILancamentoRepository _lancamentoRepo;
-        public ObterExtratoHandler(IContaRepository contaRepo, ILancamentoRepository lancamentoRepo )
+
+        public ObterExtratoHandler(IContaRepository contaRepo, ILancamentoRepository lancamentoRepo)
         {
             _contaRepo = contaRepo;
             _lancamentoRepo = lancamentoRepo;
@@ -17,24 +18,32 @@ namespace MyFinance.Application.Handlers
 
         public async Task<ExtratoDto> Handle(ObterExtratoQuery request, CancellationToken cancellationToken)
         {
-            // 1.0 Busca os dados da Conta (pra saber o saldo)
             var conta = await _contaRepo.GetByIdAsync(request.ContaId);
 
             if (conta == null)
-                throw new Exception("Conta não encontrada"); // Em prod, usaria uma exceção customizada ou Notification Pattern
+                throw new Exception("Conta não encontrada");
 
-            // 2. Busca os lançamentos dessa conta
-            var lancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
+            // Traz tudo do banco
+            var todosLancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
 
-            // 3. Monta o objeto de resposta (Mapeamento manual)
-            // Em projetos grandes usamos AutoMapper, mas manual é mais rápido e explícito pra aprender
+            // =======================================================
+            // FILTRO DE COMPETÊNCIA: Exibe apenas o que importa no momento (Mês Atual)
+            // =======================================================
+            var dataAtual = DateTime.Now;
+            var lancamentosDoMes = todosLancamentos
+                .Where(l => l.DataVencimento.Month == dataAtual.Month && l.DataVencimento.Year == dataAtual.Year)
+                .ToList();
+
+            // O Saldo no Extrato agora reflete o Resultado Líquido do Mês (Para bater com o Excel)
+            var balancoDoMes = lancamentosDoMes.Sum(l => l.Valor);
+
             return new ExtratoDto
             {
                 ContaId = conta.Id,
                 NomeConta = conta.Nome,
                 Banco = conta.Banco,
-                SaldoAtual = conta.SaldoAtual,
-                Lancamentos = lancamentos.Select(l => new LancamentoDto
+                SaldoAtual = balancoDoMes, // Trocamos o Saldo Global pelo Saldo do Mês Visível
+                Lancamentos = lancamentosDoMes.Select(l => new LancamentoDto
                 {
                     Id = l.Id,
                     Descricao = l.Descricao,
@@ -45,8 +54,6 @@ namespace MyFinance.Application.Handlers
                     CategoriaId = l.CategoriaId,
                     ContaId = l.ContaId,
                     Pago = l.Pago,
-
-                    // [NOVOS CAMPOS]
                     EhRecorrente = l.EhRecorrente,
                     Frequencia = (int)l.Frequencia,
                     ParcelaAtual = l.ParcelaAtual,
