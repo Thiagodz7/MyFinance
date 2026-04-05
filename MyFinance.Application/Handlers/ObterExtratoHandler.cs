@@ -23,26 +23,36 @@ namespace MyFinance.Application.Handlers
             if (conta == null)
                 throw new Exception("Conta não encontrada");
 
-            // Traz tudo do banco
+            // Trazemos tudo para poder calcular a história da conta
             var todosLancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
 
-            // =======================================================
-            // FILTRO DE COMPETÊNCIA: Exibe apenas o que importa no momento (Mês Atual)
-            // =======================================================
             var dataAtual = DateTime.Now;
+
+            // 1. O que aconteceu antes deste mês (Para o Saldo Anterior)
+            // Pegamos tudo até o último dia do mês passado
+            var saldoPassado = todosLancamentos
+                .Where(l => l.DataVencimento < new DateTime(dataAtual.Year, dataAtual.Month, 1))
+                .Sum(l => l.Valor);
+
+            // 2. O que aconteceu DENTRO deste mês (Para o Extrato Visual)
             var lancamentosDoMes = todosLancamentos
                 .Where(l => l.DataVencimento.Month == dataAtual.Month && l.DataVencimento.Year == dataAtual.Year)
                 .ToList();
 
-            // O Saldo no Extrato agora reflete o Resultado Líquido do Mês (Para bater com o Excel)
-            var balancoDoMes = lancamentosDoMes.Sum(l => l.Valor);
+            // 3. Resultado puramente do mês (Receitas - Despesas de Abril)
+            var lucroMesAtual = lancamentosDoMes.Sum(l => l.Valor);
 
             return new ExtratoDto
             {
                 ContaId = conta.Id,
                 NomeConta = conta.Nome,
                 Banco = conta.Banco,
-                SaldoAtual = balancoDoMes, // Trocamos o Saldo Global pelo Saldo do Mês Visível
+
+                // --- Povoando o Tripé ---
+                SaldoAnterior = saldoPassado,
+                LucroDoMes = lucroMesAtual,
+                SaldoAtual = saldoPassado + lucroMesAtual, // A soma perfeita
+
                 Lancamentos = lancamentosDoMes.Select(l => new LancamentoDto
                 {
                     Id = l.Id,

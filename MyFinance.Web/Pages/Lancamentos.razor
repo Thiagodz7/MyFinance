@@ -69,14 +69,34 @@ else if (extrato == null || (extrato.Lancamentos != null && !extrato.Lancamentos
 }
 else
 {
-    <MudPaper Class="pa-4 mb-6 d-flex justify-space-between align-center" Elevation="0" Style="border: 1px solid #E2E8F0; border-radius: 12px;">
-        <div class="mr-2">
-            <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Conta</MudText>
-            <MudText Typo="Typo.h6" Style="color: #1E293B; font-weight: 700; line-height: 1.2;">@extrato.NomeConta</MudText>
+    <MudPaper Class="pa-4 mb-6 d-flex flex-wrap justify-space-between align-center gap-4" Elevation="0" Style="border: 1px solid #E2E8F0; border-radius: 12px; background-color: #F8FAFC;">
+
+        @* Bloco 1: Nome da Conta *@
+        <div style="flex: 1; min-width: 150px;">
+            <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Conta Selecionada</MudText>
+            <MudText Typo="Typo.h6" Style="color: #1E293B; font-weight: 800; line-height: 1.2;">@extrato.NomeConta</MudText>
         </div>
-        <div class="text-end" style="min-width: fit-content;">
-            <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Saldo Atual</MudText>
-            <MudText Typo="Typo.h5" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)" Style="font-weight: 800; white-space: nowrap;">
+
+        @* Bloco 2: Saldo Anterior (O que sobrou dos meses passados) *@
+        <div class="text-end" style="flex: 1; min-width: 120px; border-right: 1px solid #E2E8F0; padding-right: 16px;">
+            <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 700; text-transform: uppercase;">Saldo Anterior</MudText>
+            <MudText Typo="Typo.subtitle1" Color="@(extrato.SaldoAnterior >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
+                @extrato.SaldoAnterior.ToString("C2")
+            </MudText>
+        </div>
+
+        @* Bloco 3: Lucro do Mês (Entradas vs Saídas do mês atual) *@
+        <div class="text-end" style="flex: 1; min-width: 120px; border-right: 1px solid #E2E8F0; padding-right: 16px;">
+            <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 700; text-transform: uppercase;">Resultado do Mês</MudText>
+            <MudText Typo="Typo.subtitle1" Color="@(extrato.LucroDoMes >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
+                @(extrato.LucroDoMes > 0 ? "+" : "")@extrato.LucroDoMes.ToString("C2")
+            </MudText>
+        </div>
+
+        @* Bloco 4: Saldo Atual (O Valor Final na Conta) *@
+        <div class="text-end" style="flex: 1; min-width: 120px;">
+            <MudText Typo="Typo.caption" Style="color: #0F172A; font-weight: 800; text-transform: uppercase;">Saldo Atual</MudText>
+            <MudText Typo="Typo.h5" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)" Style="font-weight: 900;">
                 @extrato.SaldoAtual.ToString("C2")
             </MudText>
         </div>
