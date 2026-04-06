@@ -56,35 +56,46 @@ else
 {
     <MudGrid Class="mb-6">
         @* Widget de Receitas *@
-        <MudItem xs="12" sm="4">
+        <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #10B981 !important;">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Class="mr-3" />
-                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">RECEITAS</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">RECEITAS (MÊS)</MudText>
                 </div>
                 <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #10B981;">@dashboard.TotalReceitas.ToString("C2")</MudText>
             </MudPaper>
         </MudItem>
 
         @* Widget de Despesas *@
-        <MudItem xs="12" sm="4">
+        <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #EF4444 !important;">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Class="mr-3" />
-                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">DESPESAS</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">DESPESAS (MÊS)</MudText>
                 </div>
                 <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #EF4444;">@dashboard.TotalDespesas.ToString("C2")</MudText>
             </MudPaper>
         </MudItem>
 
-        @* Widget de Lucro *@
-        <MudItem xs="12" sm="4">
+        @* Widget de Lucro do Mês *@
+        <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #3B82F6 !important;">
                 <div class="d-flex align-center">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalanceWallet" Color="Color.Info" Class="mr-3" />
-                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">LUCRO LÍQUIDO</MudText>
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 600;">LUCRO (MÊS)</MudText>
                 </div>
                 <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 800; color: #1E293B;">@dashboard.SaldoTotal.ToString("C2")</MudText>
+            </MudPaper>
+        </MudItem>
+
+        @* NOVO: Widget de Lucro do Ano *@
+        <MudItem xs="12" sm="6" lg="3">
+            <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #8B5CF6 !important; background-color: #F5F3FF;">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Style="color: #8B5CF6;" Class="mr-3" />
+                    <MudText Typo="Typo.subtitle2" Style="color: #64748B; font-weight: 800;">LUCRO ANUAL</MudText>
+                </div>
+                <MudText Typo="Typo.h5" Class="mt-2" Style="font-weight: 900; color: #6D28D9;">@dashboard.LucroPrevistoAno.ToString("C2")</MudText>
             </MudPaper>
         </MudItem>
     </MudGrid>
@@ -143,7 +154,8 @@ else
         </MudItem>
 
         <MudItem xs="12">
-            <MudPaper Elevation="0" Class="pa-6 border border-solid mud-border-lines-default" Style="border-radius: 16px;">
+            @* CORREÇÃO MOBILE: Adicionado overflow-hidden no container principal *@
+            <MudPaper Elevation="0" Class="pa-4 pa-md-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; overflow: hidden;">
                 <div class="d-flex align-center justify-space-between mb-6">
                     <div class="d-flex align-center">
                         <MudIcon Icon="@Icons.Material.Filled.Timeline" Color="Color.Info" Class="mr-2" />
@@ -156,12 +168,18 @@ else
                 {
                     <MudGrid>
                         <MudItem xs="12" lg="7">
-                            <MudChart ChartType="ChartType.Line" ChartSeries="@seriesPrevisao" XAxisLabels="@labelsPrevisao" Width="100%" Height="320px" ChartOptions="@_lineOptions" />
+                            @* CORREÇÃO MOBILE: Container para scroll horizontal se o gráfico bugar *@
+                            <div style="width: 100%; overflow-x: auto; padding-bottom: 10px;">
+                                <div style="min-width: 400px;">
+                                    <MudChart ChartType="ChartType.Line" ChartSeries="@seriesPrevisao" XAxisLabels="@labelsPrevisao" Width="100%" Height="320px" ChartOptions="@_lineOptions" />
+                                </div>
+                            </div>
                         </MudItem>
 
                         <MudItem xs="12" lg="5">
-                            <div class="previsao-card">
-                                <table class="w-100" style="border-collapse: collapse;">
+                            @* CORREÇÃO MOBILE: O segredo para tabelas perfeitas no celular *@
+                            <div class="previsao-card" style="width: 100%; overflow-x: auto;">
+                                <table class="w-100" style="border-collapse: collapse; min-width: 350px;">
                                     <thead class="header-table">
                                         <tr>
                                             <th class="pa-3 text-start"><MudText Typo="Typo.caption" Style="font-weight: 800;">MÊS</MudText></th>

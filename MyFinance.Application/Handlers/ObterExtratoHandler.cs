@@ -26,20 +26,22 @@ namespace MyFinance.Application.Handlers
             // Trazemos tudo para poder calcular a história da conta
             var todosLancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
 
-            var dataAtual = DateTime.Now;
+            // 1. Define qual é o mês/ano alvo da busca
+            var mesAlvo = request.Mes ?? DateTime.Now.Month;
+            var anoAlvo = request.Ano ?? DateTime.Now.Year;
+            var dataFiltroInicio = new DateTime(anoAlvo, mesAlvo, 1);
 
-            // 1. O que aconteceu antes deste mês (Para o Saldo Anterior)
-            // Pegamos tudo até o último dia do mês passado
+            // 2. O que aconteceu antes do mês filtrado (Para o Saldo Anterior dinâmico)
             var saldoPassado = todosLancamentos
-                .Where(l => l.DataVencimento < new DateTime(dataAtual.Year, dataAtual.Month, 1))
+                .Where(l => l.DataVencimento < dataFiltroInicio)
                 .Sum(l => l.Valor);
 
-            // 2. O que aconteceu DENTRO deste mês (Para o Extrato Visual)
+            // 3. O que aconteceu DENTRO do mês filtrado
             var lancamentosDoMes = todosLancamentos
-                .Where(l => l.DataVencimento.Month == dataAtual.Month && l.DataVencimento.Year == dataAtual.Year)
+                .Where(l => l.DataVencimento.Month == mesAlvo && l.DataVencimento.Year == anoAlvo)
                 .ToList();
 
-            // 3. Resultado puramente do mês (Receitas - Despesas de Abril)
+            // 4. Resultado puramente do mês selecionado
             var lucroMesAtual = lancamentosDoMes.Sum(l => l.Valor);
 
             return new ExtratoDto
@@ -48,10 +50,10 @@ namespace MyFinance.Application.Handlers
                 NomeConta = conta.Nome,
                 Banco = conta.Banco,
 
-                // --- Povoando o Tripé ---
+                // --- Povoando o Tripé Dinâmico ---
                 SaldoAnterior = saldoPassado,
                 LucroDoMes = lucroMesAtual,
-                SaldoAtual = saldoPassado + lucroMesAtual, // A soma perfeita
+                SaldoAtual = saldoPassado + lucroMesAtual,
 
                 Lancamentos = lancamentosDoMes.Select(l => new LancamentoDto
                 {
@@ -69,7 +71,7 @@ namespace MyFinance.Application.Handlers
                     ParcelaAtual = l.ParcelaAtual,
                     TotalParcelas = l.TotalParcelas,
                     GrupoRecorrenciaId = l.GrupoRecorrenciaId
-                }).ToList()
+                }).OrderBy(l => l.Data).ToList() // Ordena por data para o UI ficar alinhado
             };
         }
     }

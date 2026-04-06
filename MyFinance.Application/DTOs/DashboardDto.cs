@@ -11,6 +11,8 @@
 
         // [NOVO] Para o Gráfico de Barras (Previsibilidade de Caixa)
         public List<DashboardPrevisaoDto> PrevisaoProximosMeses { get; set; } = new();
+
+        public decimal LucroPrevistoAno { get; set; }
     }
 
     public class DashboardCategoriaDto

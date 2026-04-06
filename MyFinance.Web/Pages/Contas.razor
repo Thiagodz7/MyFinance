@@ -78,7 +78,7 @@ else
                     </div>
 
                     <div class="mt-4">
-                        <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 600;">SALDO ATUAL</MudText>
+                        <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 600; text-transform: uppercase;">Saldo (Previsto P/ fim deste mês)</MudText>
                         <MudText Typo="Typo.h5"
                                  Style="@($"font-weight: 800; color: {(conta.Ativo ? (conta.SaldoAtual >= 0 ? "#10B981" : "#EF4444") : "#94A3B8")};")">
                             @conta.SaldoAtual.ToString("C2")

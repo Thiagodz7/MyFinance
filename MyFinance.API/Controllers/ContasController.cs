@@ -21,9 +21,10 @@ namespace MyFinance.API.Controllers
 
         // GET: api/Contas/{id}/extrato
         [HttpGet("{id}/extrato")]
-        public async Task<IActionResult> ObterExtrato(Guid id)
+        public async Task<IActionResult> ObterExtrato(Guid id, [FromQuery] int? mes, [FromQuery] int? ano)
         {
-            var query = new ObterExtratoQuery(id);
+            // Passamos os novos parâmetros recebidos da URL
+            var query = new ObterExtratoQuery(id, mes, ano);
             var resultado = await _mediator.Send(query);
 
             return Ok(resultado);

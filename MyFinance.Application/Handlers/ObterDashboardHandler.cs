@@ -25,7 +25,7 @@ namespace MyFinance.Application.Handlers
             var mesAtual = dataAtual.Month;
             var anoAtual = dataAtual.Year;
 
-            // Filtro para os cards superiores (Apenas o mês vigente)
+            // 1. Filtro do Mês Vigente
             var lancamentosMes = todosLancamentos
                 .Where(l => l.DataVencimento.Month == mesAtual && l.DataVencimento.Year == anoAtual)
                 .ToList();
@@ -45,23 +45,26 @@ namespace MyFinance.Application.Handlers
                 .ToList();
 
             // =======================================================
-            // MOTOR DE PREVISIBILIDADE CORRIGIDO
+            // [NOVO] CÁLCULO DO LUCRO ANUAL
+            // =======================================================
+            var lucroAno = todosLancamentos
+                .Where(l => l.DataVencimento.Year == anoAtual)
+                .Sum(l => l.Valor);
+
+            // =======================================================
+            // MOTOR DE PREVISIBILIDADE
             // =======================================================
             var previsoes = new List<DashboardPrevisaoDto>();
 
-            // O BUG ESTAVA AQUI: conta.SaldoAtual já inclui o futuro.
-            // Para projetar, precisamos saber o Saldo Real acumulado APENAS até o fim deste mês.
             var fimMesAtual = new DateTime(anoAtual, mesAtual, DateTime.DaysInMonth(anoAtual, mesAtual), 23, 59, 59);
             decimal saldoAcumuladoReal = todosLancamentos.Where(l => l.DataVencimento <= fimMesAtual).Sum(l => l.Valor);
 
-            // Adiciona o mês atual como ponto 0 no gráfico
             previsoes.Add(new DashboardPrevisaoDto
             {
                 Mes = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(mesAtual).ToUpper(),
                 SaldoPrevisto = saldoAcumuladoReal
             });
 
-            // Projeta os próximos 5 meses com perfeição
             for (int i = 1; i <= 5; i++)
             {
                 var dataAlvo = dataAtual.AddMonths(i);
@@ -73,7 +76,6 @@ namespace MyFinance.Application.Handlers
                 var receitasMes = lancamentosMesAlvo.Where(l => l.Valor > 0).Sum(l => l.Valor);
                 var despesasMes = lancamentosMesAlvo.Where(l => l.Valor < 0).Sum(l => l.Valor);
 
-                // Como partimos de um saldo seguro, agora podemos apenas somar o fluxo do mês alvo
                 saldoAcumuladoReal += (receitasMes + despesasMes);
 
                 previsoes.Add(new DashboardPrevisaoDto
@@ -89,7 +91,8 @@ namespace MyFinance.Application.Handlers
             {
                 TotalReceitas = receitas,
                 TotalDespesas = Math.Abs(despesas),
-                SaldoTotal = receitas + despesas, // Lucro Líquido do Mês Atual
+                SaldoTotal = receitas + despesas,
+                LucroPrevistoAno = lucroAno, // <--- Adicionado aqui!
                 DespesasPorCategoria = porCategoria,
                 PrevisaoProximosMeses = previsoes
             };

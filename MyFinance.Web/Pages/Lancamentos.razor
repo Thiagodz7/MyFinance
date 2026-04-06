@@ -69,6 +69,25 @@ else if (extrato == null || (extrato.Lancamentos != null && !extrato.Lancamentos
 }
 else
 {
+    @* --- SELETOR DE MÊS/ANO --- *@
+    <div class="d-flex align-center gap-4 mb-4" style="max-width: 300px;">
+        <MudDatePicker Label="Mês de Referência"
+                       @bind-Date="_dataFiltro"
+                       OpenTo="OpenTo.Month"
+                       FixDay="1"
+                       DateFormat="MM/yyyy"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Color="Color.Primary" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="BuscarPorPeriodo"
+                   DisableElevation="true">
+            Buscar
+        </MudButton>
+    </div>
+
     <MudPaper Class="pa-4 mb-6 d-flex flex-wrap justify-space-between align-center gap-4" Elevation="0" Style="border: 1px solid #E2E8F0; border-radius: 12px; background-color: #F8FAFC;">
 
         @* Bloco 1: Nome da Conta *@
@@ -153,6 +172,7 @@ else
 @code {
     private ExtratoDto? extrato;
     private bool _carregando = true;
+    private DateTime? _dataFiltro = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
     public enum TipoExclusaoRecorrencia
     {
@@ -269,9 +289,13 @@ else
             _carregando = true;
             var idContaSelecionada = FinanceState.SelectedAccountId;
 
+            // Pega o mês/ano do picker ou cai no default
+            var mes = _dataFiltro?.Month ?? DateTime.Now.Month;
+            var ano = _dataFiltro?.Year ?? DateTime.Now.Year;
+
             if (idContaSelecionada != null && idContaSelecionada != Guid.Empty)
             {
-                extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{idContaSelecionada}/extrato");
+                extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{idContaSelecionada}/extrato?mes={mes}&ano={ano}");
             }
             else
             {
@@ -280,7 +304,7 @@ else
                 if ((contas != null && contas.Any()))
                 {
                     var contaAtiva = contas.FirstOrDefault(c => c.Ativo) ?? contas.First();
-                    extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaAtiva.Id}/extrato");
+                    extrato = await Http.GetFromJsonAsync<ExtratoDto>($"api/Contas/{contaAtiva.Id}/extrato?mes={mes}&ano={ano}");
                     FinanceState.SetAccount(contaAtiva.Id, contaAtiva.Nome);
                 }
             }
@@ -293,6 +317,12 @@ else
         {
             _carregando = false;
         }
+    }
+
+    private async Task BuscarPorPeriodo()
+    {
+        await CarregarExtrato();
+        StateHasChanged();
     }
 
     public void Dispose()
