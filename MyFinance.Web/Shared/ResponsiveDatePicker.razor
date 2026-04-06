@@ -1,0 +1,55 @@
+﻿@using MudBlazor
+
+@* --- VERSÃO PC: Calendário elegante do MudBlazor --- *@
+<MudHidden Breakpoint="Breakpoint.SmAndDown">
+    <MudDatePicker Label="@Label"
+                   Date="@Date"
+                   DateChanged="OnDateChanged"
+                   OpenTo="@OpenTo"
+                   FixDay="@FixDay"
+                   DateFormat="@DateFormat"
+                   Variant="@Variant"
+                   Margin="@Margin"
+                   Color="@Color" />
+</MudHidden>
+
+@* --- VERSÃO MOBILE: Seletor Nativo do Android/iOS --- *@
+<MudHidden Breakpoint="Breakpoint.MdAndUp">
+    <MudTextField T="DateTime?"
+                  Label="@Label"
+                  Value="@Date"
+                  ValueChanged="OnDateChanged"
+                  InputType="@(IsMonthPicker ? InputType.Month : InputType.Date)"
+                  Variant="@Variant"
+                  Margin="@Margin"
+                  Format="@(IsMonthPicker ? "yyyy-MM" : "yyyy-MM-dd")" />
+</MudHidden>
+
+@code {
+    // Two-way binding padrão do Blazor (@bind-Date)
+    [Parameter] public DateTime? Date { get; set; }
+    [Parameter] public EventCallback<DateTime?> DateChanged { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Data";
+    [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
+    [Parameter] public Margin Margin { get; set; } = Margin.Dense;
+    [Parameter] public Color Color { get; set; } = Color.Primary;
+
+    // Configurações avançadas (Para quando precisarmos usar como Seletor de Mês)
+    [Parameter] public bool IsMonthPicker { get; set; } = false;
+    [Parameter] public OpenTo OpenTo { get; set; } = OpenTo.Date;
+    [Parameter] public int? FixDay { get; set; }
+    [Parameter] public string DateFormat { get; set; } = "dd/MM/yyyy";
+
+    private Task OnDateChanged(DateTime? newValue)
+    {
+        // Se foi passado um "FixDay" (ex: FixDay="1"), garantimos que a data
+        // selecionada pelo mobile ou PC crave no dia exato, evitando bugs de fuso horário.
+        if (newValue.HasValue && FixDay.HasValue)
+        {
+            newValue = new DateTime(newValue.Value.Year, newValue.Value.Month, FixDay.Value);
+        }
+
+        return DateChanged.InvokeAsync(newValue);
+    }
+}

@@ -71,19 +71,17 @@ else
 {
     @* --- SELETOR DE MÊS/ANO --- *@
     <div class="d-flex align-center gap-4 mb-4" style="max-width: 300px;">
-        <MudDatePicker Label="Mês de Referência"
-                       @bind-Date="_dataFiltro"
-                       OpenTo="OpenTo.Month"
-                       FixDay="1"
-                       DateFormat="MM/yyyy"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Color="Color.Primary" />
+        <ResponsiveDatePicker Label="Mês de Referência"
+                              @bind-Date="_dataFiltro"
+                              IsMonthPicker="true"
+                              OpenTo="OpenTo.Month"
+                              FixDay="1"
+                              DateFormat="MM/yyyy" />
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    OnClick="BuscarPorPeriodo"
-                   DisableElevation="true">
+                   DropShadow="false">
             Buscar
         </MudButton>
     </div>
