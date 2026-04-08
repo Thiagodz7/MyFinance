@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using MyFinance.Application.DTOs;
 using MyFinance.Application.Queries;
+using MyFinance.Domain.Entities;
 using MyFinance.Domain.Interfaces;
 using System.Globalization;
 
@@ -19,13 +20,30 @@ namespace MyFinance.Application.Handlers
 
         public async Task<DashboardDto> Handle(ObterDashboardQuery request, CancellationToken cancellationToken)
         {
-            var todosLancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
+            List<Lancamento> todosLancamentos;
+
+            if (request.ContaId == Guid.Empty)
+            {
+                var contas = await _contaRepo.GetAllAsync();
+                var idsContas = contas.Select(c => c.Id).ToList();
+
+                var lancamentosBrutos = await _lancamentoRepo.GetAllAsync();
+
+                todosLancamentos = lancamentosBrutos
+                    .Where(l => idsContas.Contains(l.ContaId))
+                    .ToList();
+            }
+            else
+            {
+                // O AJUSTE ESTÁ AQUI: Envolvemos o await em parênteses e chamamos o .ToList()
+                todosLancamentos = (await _lancamentoRepo.GetByContaIdAsync(request.ContaId)).ToList();
+            }
 
             var dataAtual = DateTime.Now;
             var mesAtual = dataAtual.Month;
             var anoAtual = dataAtual.Year;
 
-            // 1. Filtro do Mês Vigente
+            // Filtros e Cálculos (Iguais ao original, mas agora operando sobre a lista global se necessário)
             var lancamentosMes = todosLancamentos
                 .Where(l => l.DataVencimento.Month == mesAtual && l.DataVencimento.Year == anoAtual)
                 .ToList();
@@ -41,21 +59,15 @@ namespace MyFinance.Application.Handlers
                     Categoria = g.Key,
                     Valor = Math.Abs(g.Sum(l => l.Valor))
                 })
-                .OrderByDescending(x => x.Valor)
-                .ToList();
+                        .OrderByDescending(x => x.Valor)
+                        .ToList();
 
-            // =======================================================
-            // [NOVO] CÁLCULO DO LUCRO ANUAL
-            // =======================================================
             var lucroAno = todosLancamentos
                 .Where(l => l.DataVencimento.Year == anoAtual)
                 .Sum(l => l.Valor);
 
-            // =======================================================
-            // MOTOR DE PREVISIBILIDADE
-            // =======================================================
+            // MOTOR DE PREVISIBILIDADE (Agora Consolida as contas também!)
             var previsoes = new List<DashboardPrevisaoDto>();
-
             var fimMesAtual = new DateTime(anoAtual, mesAtual, DateTime.DaysInMonth(anoAtual, mesAtual), 23, 59, 59);
             decimal saldoAcumuladoReal = todosLancamentos.Where(l => l.DataVencimento <= fimMesAtual).Sum(l => l.Valor);
 
@@ -68,7 +80,6 @@ namespace MyFinance.Application.Handlers
             for (int i = 1; i <= 5; i++)
             {
                 var dataAlvo = dataAtual.AddMonths(i);
-
                 var lancamentosMesAlvo = todosLancamentos
                     .Where(l => l.DataVencimento.Month == dataAlvo.Month && l.DataVencimento.Year == dataAlvo.Year)
                     .ToList();
@@ -92,7 +103,7 @@ namespace MyFinance.Application.Handlers
                 TotalReceitas = receitas,
                 TotalDespesas = Math.Abs(despesas),
                 SaldoTotal = receitas + despesas,
-                LucroPrevistoAno = lucroAno, // <--- Adicionado aqui!
+                LucroPrevistoAno = lucroAno,
                 DespesasPorCategoria = porCategoria,
                 PrevisaoProximosMeses = previsoes
             };
