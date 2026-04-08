@@ -8,31 +8,51 @@
 @inject ISnackbar Snackbar
 
 <style>
-    /* CSS Isolatado para a modal de exclusão */
-    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-primary {
+    /* CSS Isolado para a modal de exclusão usando o BackgroundClass no overlay */
+
+    /* Botão 1: "Apenas Este" (Laranja) */
+    .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1) {
         color: #fb8c00 !important;
         font-weight: 800 !important;
     }
 
-        .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-primary:hover {
+        .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1):hover {
             background-color: #fb8c00 !important;
             color: white !important;
         }
 
-    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-secondary {
+    /* Botão 2: "Este e Próximos" (Vermelho) */
+    .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(2) {
         color: #f44336 !important;
         font-weight: 800 !important;
     }
 
-        .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-secondary:hover {
+        .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(2):hover {
             background-color: #f44336 !important;
             color: white !important;
         }
 
-    .modal-exclusao-pejota .mud-dialog-actions .mud-button-text-default:hover {
-        background-color: #9e9e9e !important;
-        color: white !important;
+    /* Botão 3: "Cancelar" (Cinza Escuro) */
+    .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(3) {
+        color: #757575 !important;
+        font-weight: 600 !important;
     }
+
+        .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(3):hover {
+            background-color: #e0e0e0 !important;
+            color: #424242 !important;
+        }
+
+    /* SEÇÃO INTELIGENTE: Quando não é recorrente (só tem Excluir e Cancelar)
+           Neste caso, o primeiro botão é o "Excluir", então forçamos ele a ser vermelho! */
+    .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1):not(:has(~ button:nth-child(3))) {
+        color: #f44336 !important;
+    }
+
+        .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1):not(:has(~ button:nth-child(3))):hover {
+            background-color: #f44336 !important;
+            color: white !important;
+        }
 
     .op-box {
         padding: 12px;
@@ -150,7 +170,11 @@ else
                 </div>
             </MudTd>
             <MudTd DataLabel="Categoria">
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                <MudChip T="string"
+                         Size="Size.Small"
+                         Color="@(context.Tipo == "Receita" ? Color.Success : Color.Error)"
+                         Variant="Variant.Outlined"
+                         Icon="@(context.Tipo == "Receita" ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)">
                     @context.Categoria
                 </MudChip>
             </MudTd>

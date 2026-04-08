@@ -74,5 +74,12 @@ namespace MyFinance.Infrastructure.Repositories
         {
             _context.Lancamentos.RemoveRange(lancamentos);
         }
+
+        public async Task<List<Lancamento>> GetAllAsync()
+        {
+            return await _context.Lancamentos
+                .Include(l => l.Categoria) // Importante para não vir nulo no gráfico
+                .ToListAsync();
+        }
     }
 }

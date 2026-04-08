@@ -16,5 +16,7 @@ namespace MyFinance.Domain.Interfaces
         Task AddRangeAsync(IEnumerable<Lancamento> lancamentos);
         Task<IEnumerable<Lancamento>> ObterPorGrupoIdAsync(Guid grupoId);
         void DeletarVarios(IEnumerable<Lancamento> lancamentos);
+
+        Task<List<Lancamento>> GetAllAsync();
     }
 }

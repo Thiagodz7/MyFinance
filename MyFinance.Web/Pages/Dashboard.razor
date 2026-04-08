@@ -248,39 +248,60 @@ else
         try
         {
             _carregando = true;
+
+            // 1. Tenta carregar do Cache Local primeiro para dar velocidade na UI
             if (LocalDb.CacheDashboard != null && LocalDb.CacheDashboard.Any())
             {
                 var cache = LocalDb.CacheDashboard.FirstOrDefault();
-                if (cache != null) { dashboard = cache; MapearGraficos(); _carregando = false; await InvokeAsync(StateHasChanged); }
+                if (cache != null)
+                {
+                    dashboard = cache;
+                    MapearGraficos();
+                    _carregando = false;
+                    await InvokeAsync(StateHasChanged);
+                }
             }
 
-            Guid? idParaBuscar = FinanceState.SelectedAccountId;
-            if (idParaBuscar == null)
+            // 2. Lógica de Seleção de Conta:
+            // Se for null (primeiro acesso), busca a conta padrão/ativa.
+            // Se for Guid.Empty, o usuário escolheu "Todas as Contas", então não entra aqui.
+            if (FinanceState.SelectedAccountId == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
                 if (contas != null && contas.Any())
                 {
                     var contaPadrao = contas.FirstOrDefault(c => c.Ativo) ?? contas.First();
-                    idParaBuscar = contaPadrao.Id;
                     FinanceState.SetAccount(contaPadrao.Id, contaPadrao.Nome);
                 }
             }
 
+            // 3. Busca os dados reais na API
+            Guid? idParaBuscar = FinanceState.SelectedAccountId;
             if (idParaBuscar != null)
             {
+                // Se idParaBuscar for Guid.Empty, a API retornará o consolidado de todas as contas
                 var dadosApi = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
                 if (dadosApi != null)
                 {
                     dashboard = dadosApi;
                     MapearGraficos();
+
+                    // Atualiza o Cache Local
                     LocalDb.CacheDashboard.Clear();
                     LocalDb.CacheDashboard.Add(dashboard);
                     await LocalDb.SaveChanges();
                 }
             }
         }
-        catch (Exception ex) { Console.WriteLine(ex.Message); }
-        finally { _carregando = false; await InvokeAsync(StateHasChanged); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erro ao carregar Dashboard: {ex.Message}");
+        }
+        finally
+        {
+            _carregando = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private void MapearGraficos()

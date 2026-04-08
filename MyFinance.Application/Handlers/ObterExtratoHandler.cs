@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using MyFinance.Application.DTOs;
 using MyFinance.Application.Queries;
+using MyFinance.Domain.Entities;
 using MyFinance.Domain.Interfaces;
 
 namespace MyFinance.Application.Handlers
@@ -18,39 +19,62 @@ namespace MyFinance.Application.Handlers
 
         public async Task<ExtratoDto> Handle(ObterExtratoQuery request, CancellationToken cancellationToken)
         {
-            var conta = await _contaRepo.GetByIdAsync(request.ContaId);
+            List<Lancamento> todosLancamentos;
+            string nomeExibicao;
+            string bancoExibicao;
 
-            if (conta == null)
-                throw new Exception("Conta não encontrada");
+            // VERIFICAÇÃO DE VISÃO GLOBAL VS INDIVIDUAL
+            if (request.ContaId == Guid.Empty)
+            {
+                // 1. Busca todas as contas do usuário para saber quais lançamentos pertencem a ele
+                var contas = await _contaRepo.GetAllAsync();
+                var idsContas = contas.Select(c => c.Id).ToList();
 
-            // Trazemos tudo para poder calcular a história da conta
-            var todosLancamentos = await _lancamentoRepo.GetByContaIdAsync(request.ContaId);
+                // 2. Busca os lançamentos e filtra pelos IDs das contas encontradas
+                var lancamentosBrutos = await _lancamentoRepo.GetAllAsync();
+                todosLancamentos = lancamentosBrutos.Where(l => idsContas.Contains(l.ContaId)).ToList();
 
-            // 1. Define qual é o mês/ano alvo da busca
+                nomeExibicao = "Todas as Contas";
+                bancoExibicao = "Consolidado Pejota.io";
+            }
+            else
+            {
+                var conta = await _contaRepo.GetByIdAsync(request.ContaId);
+                if (conta == null) throw new Exception("Conta não encontrada");
+
+                // Adicione o parênteses e o .ToList() aqui também!
+                todosLancamentos = (await _lancamentoRepo.GetByContaIdAsync(request.ContaId)).ToList();
+
+                nomeExibicao = conta.Nome;
+                bancoExibicao = conta.Banco;
+            }
+
+            // LÓGICA DE FILTRO TEMPORAL (Mês/Ano)
             var mesAlvo = request.Mes ?? DateTime.Now.Month;
             var anoAlvo = request.Ano ?? DateTime.Now.Year;
             var dataFiltroInicio = new DateTime(anoAlvo, mesAlvo, 1);
 
-            // 2. O que aconteceu antes do mês filtrado (Para o Saldo Anterior dinâmico)
+            // CÁLCULO DO TRIPÉ FINANCEIRO
+            // 1. Saldo Anterior (Tudo o que aconteceu antes do mês selecionado)
             var saldoPassado = todosLancamentos
                 .Where(l => l.DataVencimento < dataFiltroInicio)
                 .Sum(l => l.Valor);
 
-            // 3. O que aconteceu DENTRO do mês filtrado
+            // 2. Lançamentos do Mês (O que vai para a Grid)
             var lancamentosDoMes = todosLancamentos
                 .Where(l => l.DataVencimento.Month == mesAlvo && l.DataVencimento.Year == anoAlvo)
                 .ToList();
 
-            // 4. Resultado puramente do mês selecionado
+            // 3. Lucro Líquido do Mês
             var lucroMesAtual = lancamentosDoMes.Sum(l => l.Valor);
 
             return new ExtratoDto
             {
-                ContaId = conta.Id,
-                NomeConta = conta.Nome,
-                Banco = conta.Banco,
+                ContaId = request.ContaId,
+                NomeConta = nomeExibicao,
+                Banco = bancoExibicao,
 
-                // --- Povoando o Tripé Dinâmico ---
+                // Povoando o Tripé
                 SaldoAnterior = saldoPassado,
                 LucroDoMes = lucroMesAtual,
                 SaldoAtual = saldoPassado + lucroMesAtual,
@@ -71,7 +95,7 @@ namespace MyFinance.Application.Handlers
                     ParcelaAtual = l.ParcelaAtual,
                     TotalParcelas = l.TotalParcelas,
                     GrupoRecorrenciaId = l.GrupoRecorrenciaId
-                }).OrderBy(l => l.Data).ToList() // Ordena por data para o UI ficar alinhado
+                }).OrderBy(l => l.Data).ToList()
             };
         }
     }
