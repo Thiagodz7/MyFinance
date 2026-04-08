@@ -7,8 +7,21 @@
         <MudTextField @bind-Value="Nome" Label="Nome" />
 
         <MudSelect T="int" Label="Tipo" @bind-Value="TipoSelecionado" AnchorOrigin="Origin.BottomCenter">
-            <MudSelectItem Value="0">Receita</MudSelectItem>
-            <MudSelectItem Value="1">Despesa</MudSelectItem>
+            @* A opção de Receita *@
+            <MudSelectItem Value="0">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Small" Class="mr-2" />
+                    <MudText>Receita</MudText>
+                </div>
+            </MudSelectItem>
+
+            @* A opção de Despesa *@
+            <MudSelectItem Value="1">
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Small" Class="mr-2" />
+                    <MudText>Despesa</MudText>
+                </div>
+            </MudSelectItem>
         </MudSelect>
     </DialogContent>
     <DialogActions>

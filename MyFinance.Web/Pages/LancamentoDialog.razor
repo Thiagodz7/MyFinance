@@ -19,8 +19,18 @@
                 <MudSelect T="string" Label="Tipo" @bind-Value="TipoSelecionado"
                            AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined"
                            Margin="Margin.Dense" Disabled="true">
-                    <MudSelectItem Value="@("Receita")" />
-                    <MudSelectItem Value="@("Despesa")" />
+                    <MudSelectItem Value="@("Receita")">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Color="Color.Success" Size="Size.Small" Class="mr-2" />
+                            <MudText>Receita</MudText>
+                        </div>
+                    </MudSelectItem>
+                    <MudSelectItem Value="@("Despesa")">
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Color="Color.Error" Size="Size.Small" Class="mr-2" />
+                            <MudText>Despesa</MudText>
+                        </div>
+                    </MudSelectItem>
                 </MudSelect>
             </MudItem>
 
@@ -57,7 +67,15 @@
                     {
                         @foreach (var cat in categorias)
                         {
-                            <MudSelectItem Value="@cat">@cat.Nome</MudSelectItem>
+                            <MudSelectItem Value="@cat">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@(cat.Tipo == "Receita" ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
+                                             Color="@(cat.Tipo == "Receita" ? Color.Success : Color.Error)"
+                                             Size="Size.Small"
+                                             Class="mr-2" />
+                                    <MudText>@cat.Nome</MudText>
+                                </div>
+                            </MudSelectItem>
                         }
                     }
                 </MudSelect>
