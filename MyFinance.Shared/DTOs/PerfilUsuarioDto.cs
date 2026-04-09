@@ -1,27 +1,28 @@
-﻿using Microsoft.AspNetCore.Identity;
-using MyFinance.Shared.Enums;
+﻿using MyFinance.Shared.Enums;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace MyFinance.Identity
+namespace MyFinance.Shared.DTOs
 {
-    public class ApplicationUser : IdentityUser
+    public class PerfilUsuarioDto
     {
+        // Aba 1: Dados Pessoais
         public string NomeCompleto { get; set; } = string.Empty;
-
-        public string CNPJ { get; set; } = string.Empty;
-
-        public string CPF { get; set; } = string.Empty;
-
-        public DateTime DataNascimento { get; set; }
-
-        public bool Ativo { get; set; } = true;
-
-        // --- CAMPOS DE INSIGHTS E SAAS ---
         public TipoOcupacao Ocupacao { get; set; } = TipoOcupacao.NaoInformado;
+
+        // Aba 2: Orçamento e Metas
         public decimal? TetoGastosMensal { get; set; }
+
+        // Aba 3: SaaS e Assinatura
         public string PlanoAtual { get; set; } = "Free";
         public string TokenAssinatura { get; set; } = string.Empty;
 
-        // --- NOVOS CAMPOS DE NOTIFICAÇÃO ---
+        public string Email { get; set; } = string.Empty;
+        public string Telefone { get; set; } = string.Empty;
+
         public bool NotificarEmail { get; set; }
         public bool NotificarTelefone { get; set; }
         public bool NotificarPush { get; set; }

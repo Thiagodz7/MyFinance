@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MyFinance.Identity.SecurityContext;
 
@@ -11,9 +12,11 @@ using MyFinance.Identity.SecurityContext;
 namespace MyFinance.Identity.Migrations
 {
     [DbContext(typeof(SecurityDbContext))]
-    partial class SecurityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409000421_AdicionarCamposPerfilUsuario")]
+    partial class AdicionarCamposPerfilUsuario
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,18 +208,6 @@ namespace MyFinance.Identity.Migrations
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
-
-                    b.Property<bool>("NotificarEmail")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("NotificarPush")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("NotificarTelefone")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("NotificarWhatsapp")
-                        .HasColumnType("bit");
 
                     b.Property<int>("Ocupacao")
                         .HasColumnType("int");

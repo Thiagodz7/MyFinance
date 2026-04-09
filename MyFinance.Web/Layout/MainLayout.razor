@@ -48,6 +48,7 @@
                             @onclick:preventDefault="true">
                     Relatórios (Em breve)
                 </MudNavLink>
+                <MudNavLink Href="/perfil" Icon="@Icons.Material.Filled.Person">Perfil</MudNavLink>
             }
 
             @if (_drawerOpen)
@@ -55,6 +56,7 @@
                 <MudText Typo="Typo.subtitle2" Class="px-4 mt-6 mb-2" Style="color: #64748B;">CONFIGURAÇÕES</MudText>
             }
 
+           
             <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
 
             @* Botão de Sair no menu lateral para Mobile *@
@@ -130,6 +132,11 @@
             <NavLink href="/contas" class="bottom-nav-item" ActiveClass="active">
                 <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Medium" />
                 <span>Contas</span>
+            </NavLink>
+
+            <NavLink href="/perfil" class="bottom-nav-item" ActiveClass="active">
+                <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" />
+                <span>Perfil</span>
             </NavLink>
         </div>
     }
