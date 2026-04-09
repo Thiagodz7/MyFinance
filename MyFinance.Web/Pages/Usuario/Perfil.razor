@@ -1,0 +1,360 @@
+﻿@page "/perfil"
+@using MyFinance.Shared.DTOs
+@using MyFinance.Shared.Enums
+@using MyFinance.Web.Services
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject PageStateService PageState
+
+<PageTitle>Meu Perfil - Pejota.io</PageTitle>
+
+<style>
+    /* Estilização Premium para o Header */
+    .perfil-header-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Estilização Moderna para as Abas (Estilo SaaS) */
+    .mud-tabs-toolbar {
+        background-color: transparent !important;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .mud-tabs-tab {
+        text-transform: none !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.2px;
+        color: #64748b !important;
+        padding: 16px 24px !important;
+        min-width: auto !important;
+    }
+
+        .mud-tabs-tab.mud-tab-active {
+            color: var(--mud-palette-primary) !important;
+            font-weight: 800 !important;
+            border-bottom: 3px solid var(--mud-palette-primary);
+        }
+
+    /* Cartão de Assinatura Premium */
+    .plan-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 16px;
+        position: relative;
+        overflow: hidden;
+        color: white;
+        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.4);
+    }
+
+        .plan-card::after {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+        }
+
+    /* Card de Alerta */
+    .insight-card {
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+</style>
+
+@if (_carregando)
+{
+    <div class="d-flex flex-column align-center justify-center mt-15">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-4" Style="color: #64748B; font-weight: 600;">Sincronizando perfil...</MudText>
+    </div>
+}
+else if (modelo != null)
+{
+    @* ================= CABEÇALHO DO PERFIL (AVATAR E NOME) ================= *@
+    <div class="perfil-header-card pa-6 pa-md-8 mb-6 d-flex flex-column flex-md-row align-center text-center text-md-start gap-6">
+
+        <MudAvatar Color="Color.Primary" Style="height: 100px; width: 100px; font-size: 2.5rem; font-weight: 800; box-shadow: 0 10px 15px -3px rgba(var(--mud-palette-primary-rgb), 0.3);">
+            @ObterIniciais()
+        </MudAvatar>
+
+        <div class="flex-grow-1">
+            <MudText Typo="Typo.h4" Style="font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">
+                @(string.IsNullOrWhiteSpace(modelo.NomeCompleto) ? "Usuário Pejota" : modelo.NomeCompleto)
+            </MudText>
+            <div class="d-flex align-center justify-center justify-md-start mt-2">
+                <MudIcon Icon="@Icons.Material.Filled.MailOutline" Size="Size.Small" Style="color: #64748B;" Class="mr-2" />
+                <MudText Typo="Typo.body1" Style="color: #64748B; font-weight: 500;">@modelo.Email</MudText>
+            </div>
+        </div>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Check"
+                   OnClick="SalvarPerfil"
+                   Disabled="@(_salvando)"
+                   Style="border-radius: 12px; font-weight: 800; padding: 12px 32px; text-transform: none; font-size: 1rem;">
+            @if (_salvando)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Salvando...</MudText>
+            }
+            else
+            {
+                <MudText>Salvar Alterações</MudText>
+            }
+        </MudButton>
+    </div>
+
+    @* ================= ÁREA DAS ABAS ================= *@
+    <MudPaper Elevation="0" Class="pa-0" Style="border-radius: 16px; border: 1px solid #e2e8f0; background-color: #ffffff; overflow: hidden;">
+        <MudTabs Elevation="0" Rounded="false" ApplyEffectsToContainer="true" PanelClass="pa-6 pa-md-8">
+
+            @* --- ABA 1: DADOS PESSOAIS --- *@
+            <MudTabPanel Text="Dados Pessoais" Icon="@Icons.Material.Outlined.Person">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mb-4 rounded-lg" Style="background-color: #F8FAFC; border-color: #CBD5E1;">
+                            <span style="color: #334155; font-weight: 500;">Sua ocupação ajuda nossa Inteligência Artificial a gerar insights tributários específicos para você.</span>
+                        </MudAlert>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="modelo.NomeCompleto" Label="Nome Completo" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.PersonOutline" AdornmentColor="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="modelo.Email" Label="E-mail de Cadastro" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.MailOutline" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="modelo.Telefone" Label="Celular / WhatsApp" Variant="Variant.Outlined" Margin="Margin.Dense" Mask="@(new PatternMask("(00) 00000-0000"))" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.PhoneIphone" AdornmentColor="Color.Primary" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="TipoOcupacao" Label="Ocupação Principal" @bind-Value="modelo.Ocupacao" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" AdornmentIcon="@Icons.Material.Filled.WorkOutline" AdornmentColor="Color.Primary">
+                            @foreach (TipoOcupacao item in Enum.GetValues(typeof(TipoOcupacao)))
+                            {
+                                <MudSelectItem Value="@item">@ObterNomeOcupacao(item)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            @* --- ABA 2: ORÇAMENTO --- *@
+            <MudTabPanel Text="Orçamento Mensal" Icon="@Icons.Material.Outlined.TrackChanges">
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1E293B;">Teto de Gastos</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #64748B;" Class="mb-4">
+                            Defina um limite mensal. Avisaremos você no Dashboard quando suas despesas estiverem se aproximando deste valor.
+                        </MudText>
+                    </MudItem>
+
+                    <MudItem xs="12" md="5">
+                        <MudNumericField @bind-Value="modelo.TetoGastosMensal" Label="Limite de Despesas" Variant="Variant.Outlined" Margin="Margin.Dense" Adornment="Adornment.Start" AdornmentText="R$" AdornmentColor="Color.Primary" Format="N2" Min="0" Clearable="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+            @* --- ABA 3: ALERTAS & INSIGHTS (ADICIONADA) --- *@
+            <MudTabPanel Text="Alertas & Insights" Icon="@Icons.Material.Outlined.NotificationsActive">
+                <div class="pa-2">
+                    <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1E293B;">Configurações de Notificação</MudText>
+                    <MudText Typo="Typo.body2" Style="color: #64748B;" Class="mb-6">
+                        Ao permitir, você recebe notificações personalizadas sobre seus gastos e dicas de melhorias geradas pela nossa Inteligência Artificial.
+                    </MudText>
+
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 d-flex align-center justify-space-between insight-card" Elevation="0">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Outlined.Email" Color="Color.Primary" Class="mr-3" />
+                                    <MudText Style="font-weight: 600;">Permitir para E-mail</MudText>
+                                </div>
+                                <MudSwitch @bind-Value="modelo.NotificarEmail" Color="Color.Primary" />
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 d-flex align-center justify-space-between insight-card" Elevation="0">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Outlined.PhoneIphone" Color="Color.Primary" Class="mr-3" />
+                                    <MudText Style="font-weight: 600;">Permitir Telefone</MudText>
+                                </div>
+                                <MudSwitch @bind-Value="modelo.NotificarTelefone" Color="Color.Primary" />
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 d-flex align-center justify-space-between insight-card" Elevation="0">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Material.Outlined.NotificationsActive" Color="Color.Primary" Class="mr-3" />
+                                    <MudText Style="font-weight: 600;">Permitir Push</MudText>
+                                </div>
+                                <MudSwitch @bind-Value="modelo.NotificarPush" Color="Color.Primary" />
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="12" md="6">
+                            <MudPaper Class="pa-4 d-flex align-center justify-space-between insight-card" Elevation="0" Style="background-color: #f8fafc; border-style: dashed; opacity: 0.7;">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="@Icons.Custom.Brands.WhatsApp" Style="color: #94a3b8;" Class="mr-3" />
+                                    <div>
+                                        <MudText Style="color: #94a3b8; font-weight: 600;">Permitir para WhatsApp</MudText>
+                                        <MudText Typo="Typo.caption" Style="color: #fb8c00; font-weight: 700;">FUNCIONALIDADE BLOQUEADA</MudText>
+                                    </div>
+                                </div>
+                                <MudSwitch @bind-Value="modelo.NotificarWhatsapp" Color="Color.Success" Disabled="true" />
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </div>
+            </MudTabPanel>
+
+            @* --- ABA 4: ASSINATURA --- *@
+            <MudTabPanel Text="Assinatura" Icon="@Icons.Material.Outlined.WorkspacePremium">
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <div class="plan-card pa-6 d-flex flex-column justify-center h-100">
+                            <MudText Typo="Typo.overline" Style="color: #94A3B8; font-weight: 800; letter-spacing: 1px;">SEU PLANO ATUAL</MudText>
+                            <div class="d-flex align-center mt-2 mb-4">
+                                <MudIcon Icon="@(modelo.PlanoAtual == "Pro" ? Icons.Material.Filled.AutoAwesome : Icons.Material.Filled.Stars)"
+                                         Color="@(modelo.PlanoAtual == "Pro" ? Color.Warning : Color.Inherit)"
+                                         Size="Size.Large" Class="mr-3" />
+                                <MudText Typo="Typo.h4" Style="font-weight: 900; letter-spacing: -1px;">
+                                    Free @modelo.PlanoAtual
+                                </MudText>
+                            </div>
+                            @if (modelo.PlanoAtual != "Pro")
+                            {
+                                <MudButton Variant="Variant.Filled" Style="background-color: white; color: #0F172A; font-weight: 800; border-radius: 8px;" Class="mt-auto">
+                                    Fazer Upgrade (Em Breve)
+                                </MudButton>
+                            }
+                        </div>
+                    </MudItem>
+
+                    <MudItem xs="12" md="6">
+                        <div class="pa-6 h-100 d-flex flex-column justify-center" style="border: 1px dashed #CBD5E1; border-radius: 16px; background-color: #F8FAFC;">
+                            <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1E293B;" Class="mb-1">Possui um Token de Ativação?</MudText>
+                            <MudText Typo="Typo.body2" Style="color: #64748B;" Class="mb-4">
+                                Insira seu código de ativação premium ou token de parceria aqui.
+                            </MudText>
+                            <MudTextField @bind-Value="modelo.TokenAssinatura"
+                                          Label="Código do Token"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Adornment="Adornment.End"
+                                          AdornmentIcon="@Icons.Material.Filled.LocalPlay"
+                                          AdornmentColor="Color.Secondary" />
+                        </div>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+
+        </MudTabs>
+    </MudPaper>
+}
+
+@code {
+    private PerfilUsuarioDto? modelo;
+    private bool _carregando = true;
+    private bool _salvando = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        PageState.SetTitle("Perfil");
+        await CarregarPerfil();
+    }
+
+    private async Task CarregarPerfil()
+    {
+        try
+        {
+            _carregando = true;
+            modelo = await Http.GetFromJsonAsync<PerfilUsuarioDto>("api/perfil");
+            if (modelo == null) modelo = new PerfilUsuarioDto();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Erro ao carregar perfil. " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _carregando = false;
+        }
+    }
+
+    private async Task SalvarPerfil()
+    {
+        if (modelo == null) return;
+
+        try
+        {
+            _salvando = true;
+            var response = await Http.PutAsJsonAsync("api/perfil", modelo);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Perfil atualizado com sucesso!", Severity.Success);
+            }
+            else
+            {
+                var erro = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro ao salvar: {erro}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _salvando = false;
+        }
+    }
+
+    private string ObterIniciais()
+    {
+        if (modelo == null) return "PJ";
+
+        if (!string.IsNullOrWhiteSpace(modelo.NomeCompleto))
+        {
+            var partes = modelo.NomeCompleto.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (partes.Length >= 2)
+            {
+                return $"{partes[0][0]}{partes[^1][0]}".ToUpper();
+            }
+            else if (partes.Length == 1)
+            {
+                return partes[0][..Math.Min(2, partes[0].Length)].ToUpper();
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(modelo.Email))
+        {
+            return modelo.Email[..Math.Min(2, modelo.Email.Length)].ToUpper();
+        }
+
+        return "US";
+    }
+
+    private string ObterNomeOcupacao(TipoOcupacao ocupacao)
+    {
+        return ocupacao switch
+        {
+            TipoOcupacao.NaoInformado => "Não Informado",
+            TipoOcupacao.CLT => "CLT (Carteira Assinada)",
+            TipoOcupacao.MEI => "MEI (Microempreendedor)",
+            TipoOcupacao.ME => "ME (Microempresa / Simples)",
+            TipoOcupacao.Autonomo => "Profissional Autônomo",
+            TipoOcupacao.Estudante => "Estudante",
+            _ => ocupacao.ToString()
+        };
+    }
+}
