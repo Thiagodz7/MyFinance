@@ -1,4 +1,5 @@
-﻿@using MyFinance.Web.DTOs
+﻿@using MyFinance.Shared.DTOs
+@using MyFinance.Shared.Enums
 @using MyFinance.Web.Services
 @inject HttpClient Http
 @inject FinanceStateService FinanceState
@@ -7,7 +8,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @inject AuthenticationStateProvider AuthStateProvider
 
-<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" Dense="true" FullWidth="false">
+<MudMenu AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft" Dense="true">
     <ActivatorContent>
         <MudButton Variant="Variant.Text"
                    Color="Color.Inherit"
@@ -20,20 +21,50 @@
     </ActivatorContent>
     <ChildContent>
         <MudMenuItem OnClick="@(() => OnAccountSelected(null))">
-            <MudText Typo="Typo.body2">Todas as Contas</MudText>
+            <div class="d-flex align-center">
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                         Size="Size.Small"
+                         Class="mr-2"
+                         Color="@(FinanceState.SelectedAccountId == Guid.Empty ? Color.Success : Color.Transparent)" />
+                <MudText Typo="Typo.body2" Style="font-weight: 600;">Todas as Contas</MudText>
+            </div>
         </MudMenuItem>
+
+        <MudDivider Class="my-1" />
 
         @if (_contas != null)
         {
             @foreach (var conta in _contas)
             {
                 <MudMenuItem OnClick="@(() => OnAccountSelected(conta.Id))">
-                    <div class="d-flex align-center">
+                    <div class="d-flex align-center w-100">
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
                                  Size="Size.Small"
                                  Class="mr-2"
                                  Color="@(FinanceState.SelectedAccountId == conta.Id ? Color.Success : Color.Transparent)" />
-                        <MudText Typo="Typo.body2">@conta.Nome</MudText>
+
+                        <MudText Typo="Typo.body2" Class="flex-grow-1 mr-4">@conta.Nome</MudText>
+
+                        @if (conta.Tipo == TipoConta.Simulacao)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Science" Size="Size.Small" Color="Color.Info" Style="opacity: 0.9;" title="Simulação" />
+                        }
+                        else if (conta.Tipo == TipoConta.Corrente)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Conta Corrente" />
+                        }
+                        else if (conta.Tipo == TipoConta.Poupanca)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Savings" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Poupança" />
+                        }
+                        else if (conta.Tipo == TipoConta.Investimento)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Investimentos" />
+                        }
+                        else if (conta.Tipo == TipoConta.CartaoCredito)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Cartão de Crédito" />
+                        }
                     </div>
                 </MudMenuItem>
             }
@@ -88,7 +119,6 @@
 
     private void OnAccountSelected(Guid? id)
     {
-        // Se o id for null, tratamos como Guid.Empty para a API entender que é "Global"
         var idFinal = id ?? Guid.Empty;
         var nome = _contas?.FirstOrDefault(c => c.Id == id)?.Nome ?? "Todas as Contas";
 

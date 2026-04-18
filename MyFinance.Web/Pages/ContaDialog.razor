@@ -1,4 +1,6 @@
-﻿@using MyFinance.Web.DTOs
+﻿@using MyFinance.Shared.DTOs
+@using MyFinance.Shared.Enums @* --- NOVO: Referência para o Enum --- *@
+@using MyFinance.Web.DTOs
 @inject HttpClient Http
 @inject ISnackbar Snackbar
 @inject MyFinance.Web.Services.PageStateService PageState
@@ -30,6 +32,23 @@
                               Margin="Margin.Dense"
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.AccountBalance" />
+            </MudItem>
+
+            @* --- NOVO: Seletor de Tipo de Conta --- *@
+            <MudItem xs="12">
+                <MudSelect @bind-Value="Tipo"
+                           Label="Tipo de Conta"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           AdornmentIcon="@Icons.Material.Filled.Category">
+                    <MudSelectItem Value="TipoConta.Corrente">Conta Corrente</MudSelectItem>
+                    <MudSelectItem Value="TipoConta.Poupanca">Poupança</MudSelectItem>
+                    <MudSelectItem Value="TipoConta.Investimento">Investimentos</MudSelectItem>
+                    <MudSelectItem Value="TipoConta.CartaoCredito">Cartão de Crédito</MudSelectItem>
+
+                    @* Opcional: Se quiser permitir que ele crie uma simulação em branco, descomente abaixo *@
+                    @* <MudSelectItem Value="TipoConta.Simulacao">Ambiente de Simulação</MudSelectItem> *@
+                </MudSelect>
             </MudItem>
 
             <MudItem xs="12">
@@ -73,16 +92,19 @@
     public string Banco { get; set; } = string.Empty;
     public decimal SaldoInicial { get; set; }
 
+    // NOVO: Propriedade do Tipo (Valor padrão: Corrente)
+    public TipoConta Tipo { get; set; } = TipoConta.Corrente;
+
     private bool _processando = false;
 
     protected override void OnInitialized()
     {
         if (ContaEditar != null)
         {
-            // Modo Edição
             Nome = ContaEditar.Nome;
             Banco = ContaEditar.Banco;
-            SaldoInicial = ContaEditar.SaldoAtual; // Apenas para visualização
+            SaldoInicial = ContaEditar.SaldoAtual;
+            Tipo = ContaEditar.Tipo; // Carrega o tipo atual na edição
         }
     }
 
@@ -102,32 +124,28 @@
         {
             if (ContaEditar == null)
             {
-                // --- CRIAÇÃO (POST) ---
-                var command = new { Nome, Banco, SaldoInicial };
+                // NOVO: Enviando o Tipo no Command de Criação
+                var command = new { Nome, Banco, SaldoInicial, Tipo = this.Tipo };
                 var response = await Http.PostAsJsonAsync("api/contas", command);
 
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Conta criada!", Severity.Success);
-
                     PageState.NotifyCreateNewContaChanged();
-
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else Snackbar.Add("Erro ao criar conta.", Severity.Error);
             }
             else
             {
-                // --- EDIÇÃO (PUT) ---
-                var command = new { Id = ContaEditar.Id, Nome, Banco };
+                // NOVO: Enviando o Tipo no Command de Atualização
+                var command = new { Id = ContaEditar.Id, Nome, Banco, Tipo = this.Tipo };
                 var response = await Http.PutAsJsonAsync($"api/contas/{ContaEditar.Id}", command);
 
                 if (response.IsSuccessStatusCode)
                 {
                     Snackbar.Add("Conta atualizada!", Severity.Success);
-
                     PageState.NotifyCreateNewContaChanged();
-
                     MudDialog.Close(DialogResult.Ok(true));
                 }
                 else Snackbar.Add("Erro ao atualizar.", Severity.Error);
@@ -140,6 +158,6 @@
         finally
         {
             _processando = false;
-        }      
+        }
     }
 }

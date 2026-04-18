@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using MyFinance.Domain.Entities;
+using MyFinance.Shared.Enums;
 
 namespace MyFinance.Infrastructure.Data.Configurations
 {
@@ -16,6 +17,8 @@ namespace MyFinance.Infrastructure.Data.Configurations
             builder.Property(c => c.Ativo)
                    .IsRequired()
                    .HasDefaultValue(true);
+            builder.Property(c => c.Tipo)
+                    .IsRequired();
         }
     }
 }

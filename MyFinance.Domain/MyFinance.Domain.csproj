@@ -14,4 +14,8 @@
     <Folder Include="Entities\UsuarioEntitdades\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MyFinance.Shared\MyFinance.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,6 @@
 ﻿@page "/contas"
-@using MyFinance.Web.DTOs
+@using MyFinance.Shared.DTOs
+@using MyFinance.Shared.Enums @* --- NOVO: Necessário para o TipoConta --- *@
 @using MyFinance.Web.Services
 @using MyFinance.Web.Shared
 @inject HttpClient Http
@@ -10,7 +11,6 @@
 
 <PageTitle>Contas - Pejota.io</PageTitle>
 
-@* --- CABEÇALHO PADRONIZADO (Resolve o FAB no Mobile automaticamente) --- *@
 <PageHeader Title="Minhas Contas"
             Subtitle="Gerencie seus saldos e bancos"
             ActionText="Nova Conta"
@@ -34,7 +34,6 @@
 }
 else if (!_contasFiltered.Any())
 {
-    @* --- EMPTY STATE PADRÃO TEC AND TEC --- *@
     <MudEmptyState Title="Nenhuma conta"
                    Message="Você ainda não cadastrou nenhuma conta ou o filtro está escondendo tudo."
                    Icon="@Icons.Material.Filled.AccountBalance"
@@ -48,20 +47,43 @@ else
         @foreach (var conta in _contasFiltered)
         {
             <MudItem xs="12" sm="6" md="4">
-                @* CARD REFINADO: Bordas suaves e cores do seu tema *@
                 <MudPaper Elevation="0"
                           Class="pa-5 d-flex flex-column gap-2 border border-solid"
                           Style="@GetCardStyle(conta)">
 
                     <div class="d-flex justify-space-between align-start">
                         <div>
-                            <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1E293B;">
-                                @conta.Nome
-                                @if (!conta.Ativo)
+                            <div class="d-flex align-center gap-2">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1E293B; margin-bottom: 0;">
+                                    @conta.Nome
+                                    @if (!conta.Ativo)
+                                    {
+                                        <span style="font-size: 0.7rem; color: #94A3B8; margin-left: 4px;">(INATIVA)</span>
+                                    }
+                                </MudText>
+
+                                @if (conta.Tipo == TipoConta.Simulacao)
                                 {
-                                    <span style="font-size: 0.7rem; color: #94A3B8; margin-left: 4px;">(INATIVA)</span>
+                                    <MudIcon Icon="@Icons.Material.Filled.Science" Size="Size.Small" Color="Color.Info" title="Conta de Simulação" />
                                 }
-                            </MudText>
+                                else if (conta.Tipo == TipoConta.Corrente)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Conta Corrente" />
+                                }
+                                else if (conta.Tipo == TipoConta.Poupanca)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Savings" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Poupança" />
+                                }
+                                else if (conta.Tipo == TipoConta.Investimento)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Investimentos" />
+                                }
+                                else if (conta.Tipo == TipoConta.CartaoCredito)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CreditCard" Size="Size.Small" Color="Color.Default" Style="opacity: 0.5;" title="Cartão de Crédito" />
+                                }
+                            </div>
+
                             <MudText Typo="Typo.caption" Style="color: #64748B; text-transform: uppercase; letter-spacing: 1px;">
                                 @conta.Banco
                             </MudText>
@@ -69,6 +91,9 @@ else
 
                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Dense="true" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                             <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="@(() => AbrirDialog(conta))">Editar</MudMenuItem>
+
+                            <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" OnClick="@(() => DuplicarParaSimulacao(conta))">Criar Simulação</MudMenuItem>
+
                             <MudMenuItem Icon="@(conta.Ativo? Icons.Material.Filled.PowerSettingsNew : Icons.Material.Filled.Refresh)"
                                          IconColor="@(conta.Ativo ? Color.Error : Color.Success)"
                                          OnClick="@(() => AlternarStatusConta(conta))">
@@ -150,5 +175,41 @@ else
             }
         }
         catch (Exception ex) { Snackbar.Add($"Erro: {ex.Message}", Severity.Error); }
+    }
+
+    private async Task DuplicarParaSimulacao(ContaDto conta)
+    {
+        bool? result = await DialogService.ShowMessageBox(
+            "Criar Simulação",
+            $"Isso criará uma cópia idêntica da conta '{conta.Nome}' (incluindo todos os lançamentos) para você testar cenários. Continuar?",
+            "Sim, Criar", "Cancelar");
+
+        if (result != true) return;
+
+        try
+        {
+            Snackbar.Add("Clonando dados da conta...", Severity.Info);
+
+            string nomeSimulacao = $"{conta.Nome} (Cenário B)";
+            var response = await Http.PostAsync($"api/contas/{conta.Id}/duplicar-simulacao?nome={Uri.EscapeDataString(nomeSimulacao)}", null);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Snackbar.Add("Ambiente de simulação criado com sucesso!", Severity.Success);
+                await CarregarContas(); // Atualiza a tela para mostrar o novo card
+
+                // 2. Notifica o Dropdown Global e outras telas para sincronizarem
+                PageState.NotifyCreateNewContaChanged();
+            }
+            else
+            {
+                var erro = await response.Content.ReadAsStringAsync();
+                Snackbar.Add($"Erro ao simular: {erro}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro de conexão: {ex.Message}", Severity.Error);
+        }
     }
 }

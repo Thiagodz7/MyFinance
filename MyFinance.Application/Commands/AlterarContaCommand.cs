@@ -1,9 +1,5 @@
 ﻿using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MyFinance.Shared.Enums;
 
 namespace MyFinance.Application.Commands
 {
@@ -12,5 +8,6 @@ namespace MyFinance.Application.Commands
         public Guid Id { get; set; }
         public string Nome { get; set; } = string.Empty;
         public string Banco { get; set; } = string.Empty;
+        public TipoConta Tipo { get; set; } = TipoConta.Corrente;
     }
 }

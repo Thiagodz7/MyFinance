@@ -18,7 +18,7 @@ namespace MyFinance.Application.Handlers
         public async Task<Guid> Handle(CriarContaCommand request, CancellationToken cancellationToken)
         {
             // 1. Criar a Entidade (Domínio)
-            var novaConta = new Conta(request.Nome, request.SaldoInicial, request.Banco);
+            var novaConta = new Conta(request.Nome, request.SaldoInicial, request.Banco, request.Tipo);
 
             // 2. Adicionar ao Banco
             await _repository.AddAsync(novaConta, cancellationToken);

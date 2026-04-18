@@ -1,7 +1,7 @@
 ﻿using MediatR;
-using MyFinance.Application.DTOs;
 using MyFinance.Application.Queries;
 using MyFinance.Domain.Interfaces;
+using MyFinance.Shared.DTOs;
 
 namespace MyFinance.Application.Handlers
 {
@@ -40,8 +40,9 @@ namespace MyFinance.Application.Handlers
                     Id = c.Id,
                     Nome = c.Nome,
                     Banco = c.Banco,
-                    SaldoAtual = saldoReal, // <-- Substituímos o saldo do banco pelo saldo calculado!
-                    Ativo = c.Ativo
+                    SaldoAtual = saldoReal, 
+                    Ativo = c.Ativo,
+                    Tipo = c.Tipo
                 });
             }
 
