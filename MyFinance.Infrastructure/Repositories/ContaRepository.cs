@@ -37,5 +37,27 @@ namespace MyFinance.Infrastructure.Repositories
 
             return Task.CompletedTask;
         }
+
+        public async Task ClonarLancamentosAsync(Guid contaOriginalId, Guid novaContaId, string userId)
+        {
+            var sql = @"
+                      INSERT INTO Lancamentos 
+                      (Id, Descricao, Valor, DataVencimento, Pago, ContaId, CategoriaId, UserId, EhRecorrente, Frequencia, ParcelaAtual, TotalParcelas, GrupoRecorrenciaId, DataCriacao)
+                      
+                      SELECT 
+                      NEWID(), Descricao, Valor, DataVencimento, Pago, @p0, CategoriaId, UserId, EhRecorrente, Frequencia, ParcelaAtual, TotalParcelas, GrupoRecorrenciaId, GETUTCDATE()
+                      FROM Lancamentos
+                      WHERE ContaId = @p1 AND UserId = @p2";
+
+            // O SQL sujo fica escondido aqui na Infra!
+            await _context.Database.ExecuteSqlRawAsync(sql, novaContaId, contaOriginalId, userId);
+        }
+
+        public async Task<Conta?> GetByIdAsyncForDuplicate(Guid id, string userId)
+        {
+            return await _context.Contas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        }
     }
 }

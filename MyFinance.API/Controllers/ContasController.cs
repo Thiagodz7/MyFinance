@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MyFinance.Application.Commands;
+using MyFinance.Application.Commands.Conta;
 using MyFinance.Application.DTOs;
 using MyFinance.Application.Queries;
 
@@ -59,6 +60,19 @@ namespace MyFinance.API.Controllers
         {
             await _mediator.Send(command);
             return NoContent();
+        }
+
+        [HttpPost("{id}/duplicar-simulacao")]
+        public async Task<IActionResult> DuplicarParaSimulacao(Guid id, [FromQuery] string nome)
+        {
+            var command = new DuplicarContaSimulacaoCommand
+            {
+                ContaOriginalId = id,
+                NomeSimulacao = nome
+            };
+
+            var novaContaId = await _mediator.Send(command);
+            return Ok(new { Id = novaContaId });
         }
     }
 }

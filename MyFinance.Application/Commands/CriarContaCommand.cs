@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using MyFinance.Shared.Enums;
 
 namespace MyFinance.Application.Commands
 {
@@ -6,7 +7,8 @@ namespace MyFinance.Application.Commands
     public class CriarContaCommand : IRequest<Guid>
     {
         public string Nome { get; set; } = string.Empty;
-        public string Banco { get; set; } = string.Empty; // Ex: "Nubank", "Itaú"
+        public string Banco { get; set; } = string.Empty; 
         public decimal SaldoInicial { get; set; }
+        public TipoConta Tipo { get; set; } = TipoConta.Corrente;
     }
 }

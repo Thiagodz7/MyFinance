@@ -24,7 +24,7 @@ namespace MyFinance.Application.Handlers
                 throw new Exception("Conta não encontrada");
             }
 
-            conta.Atualizar(request.Nome, request.Banco);
+            conta.Atualizar(request.Nome, request.Banco, request.Tipo);
 
             await _repository.UpdateAsync(request.Id, conta, cancellationToken);
             await _uow.CommitAsync();

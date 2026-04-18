@@ -1,4 +1,5 @@
 ﻿using MyFinance.Domain.Interfaces;
+using MyFinance.Shared.Enums;
 
 namespace MyFinance.Domain.Entities
 {
@@ -9,13 +10,16 @@ namespace MyFinance.Domain.Entities
         public decimal SaldoAtual { get; private set; }
         public bool Ativo { get; private set; }
         public string UserId { get; private set; } = string.Empty;
+        public TipoConta Tipo { get; private set; } = TipoConta.Corrente;
+
         // Construtor para criar conta nova
-        public Conta(string nome, decimal saldoInicial, string banco)
+        public Conta(string nome, decimal saldoInicial, string banco, TipoConta tipo)
         {
             Nome = nome;
             SaldoAtual = saldoInicial;
             Banco = banco;
             Ativo = true;
+            Tipo = tipo;
         }
 
         protected Conta() { }
@@ -24,10 +28,11 @@ namespace MyFinance.Domain.Entities
         {
             SaldoAtual += valorLancamento;
         }
-        public void Atualizar(string nome, string banco)
+        public void Atualizar(string nome, string banco, TipoConta tipo)
         {
             Nome = nome;
             Banco = banco;
+            Tipo = tipo;
         }
         public void AlterarStatus(bool ativo)
         {
@@ -40,6 +45,11 @@ namespace MyFinance.Domain.Entities
             {
                 UserId = userId;
             }
+        }
+
+        public void MarcarComoSimulacao()
+        {
+            Tipo = TipoConta.Simulacao;
         }
     }
 }
