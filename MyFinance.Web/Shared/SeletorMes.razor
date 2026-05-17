@@ -1,0 +1,73 @@
+﻿@using MyFinance.Web.Shared 
+
+<div class="d-flex align-center gap-2 mb-4" style="max-width: 320px;">
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Medium"
+                   OnClick="VoltarMes"
+                   title="Mês Anterior" />
+
+    <div class="flex-grow-1">
+        <ResponsiveDatePicker Label="Mês de Referência"
+                              Date="DataSelecionada"
+                              DateChanged="OnDataSelecionadaChanged"
+                              IsMonthPicker="true"
+                              OpenTo="OpenTo.Month"
+                              FixDay="1"
+                              DateFormat="MM/yyyy" />
+    </div>
+
+    <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                   Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Medium"
+                   OnClick="AvancarMes"
+                   title="Próximo Mês" />
+</div>
+
+@code {
+    [Parameter] 
+    public DateTime? DataSelecionada { get; set; } = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+
+    [Parameter] 
+    public EventCallback<DateTime?> DataSelecionadaChanged { get; set; }
+
+    [Parameter] 
+    public EventCallback OnMudancaPeriodo { get; set; }
+
+    private async Task VoltarMes()
+    {
+        if (DataSelecionada.HasValue)
+        {
+            var novaData = DataSelecionada.Value.AddMonths(-1);
+            await AtualizarData(novaData);
+        }
+    }
+
+    private async Task AvancarMes()
+    {
+        if (DataSelecionada.HasValue)
+        {
+            var novaData = DataSelecionada.Value.AddMonths(1);
+            await AtualizarData(novaData);
+        }
+    }
+
+    private async Task OnDataSelecionadaChanged(DateTime? novaData)
+    {
+        await AtualizarData(novaData);
+    }
+
+    private async Task AtualizarData(DateTime? novaData)
+    {
+        DataSelecionada = novaData;
+        
+        await DataSelecionadaChanged.InvokeAsync(novaData);
+
+        if (OnMudancaPeriodo.HasDelegate)
+        {
+            await OnMudancaPeriodo.InvokeAsync();
+        }
+    }
+}

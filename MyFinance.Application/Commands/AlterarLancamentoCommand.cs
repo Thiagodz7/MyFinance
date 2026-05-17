@@ -19,5 +19,6 @@ namespace MyFinance.Application.Commands
         public bool EhRecorrente { get; set; }
         public TipoFrequencia Frequencia { get; set; }
         public int TotalParcelas { get; set; } = 1;
+        public bool Pago { get; set; }
     }
 }

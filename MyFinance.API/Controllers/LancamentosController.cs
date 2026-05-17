@@ -66,5 +66,34 @@ namespace MyFinance.API.Controllers
 
             return Ok(resultado);
         }
+
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> PatchStatus(Guid id, [FromBody] AlterarStatusLancamentoCommand command)
+        {
+            if (id != command.Id) return BadRequest("IDs não conferem");
+            try
+            {
+                await _mediator.Send(command);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
+        [HttpGet("exportar")]
+        public async Task<IActionResult> Exportar([FromQuery] Guid contaId, [FromQuery] int mes, [FromQuery] int ano)
+        {
+            try
+            {
+                var (conteudo, nomeArquivo) = await _mediator.Send(new ExportarExtratoQuery(contaId, mes, ano));
+                return File(conteudo, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nomeArquivo);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

@@ -14,8 +14,6 @@ namespace MyFinance.Infrastructure
 
         public async Task CommitAsync()
         {
-            // O Pulo do Gato: É aqui que a mágica acontece.
-            // Todas as alterações feitas pelos repositórios serão salvas numa única transação.
             await _context.SaveChangesAsync();
         }
     }

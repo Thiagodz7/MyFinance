@@ -10,7 +10,6 @@
 @inject MyFinanceLocalDb LocalDb
 
 <style>
-    /* Estilos Premium para a Tabela de Previsão */
     .previsao-row {
         transition: all 0.2s ease-in-out;
         cursor: default;
@@ -18,7 +17,7 @@
 
         .previsao-row:hover {
             background-color: #F8FAFC !important;
-            transform: translateX(4px); /* Animação lateral suave */
+            transform: translateX(4px); 
         }
 
     .previsao-card {
@@ -55,7 +54,6 @@ else if (dashboard == null)
 else
 {
     <MudGrid Class="mb-6">
-        @* Widget de Receitas *@
         <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #10B981 !important;">
                 <div class="d-flex align-center">
@@ -66,7 +64,6 @@ else
             </MudPaper>
         </MudItem>
 
-        @* Widget de Despesas *@
         <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #EF4444 !important;">
                 <div class="d-flex align-center">
@@ -77,7 +74,6 @@ else
             </MudPaper>
         </MudItem>
 
-        @* Widget de Lucro do Mês *@
         <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #3B82F6 !important;">
                 <div class="d-flex align-center">
@@ -88,7 +84,6 @@ else
             </MudPaper>
         </MudItem>
 
-        @* NOVO: Widget de Lucro do Ano *@
         <MudItem xs="12" sm="6" lg="3">
             <MudPaper Elevation="0" Class="pa-4 border border-solid mud-border-lines-default" Style="border-radius: 16px; border-left: 6px solid #8B5CF6 !important; background-color: #F5F3FF;">
                 <div class="d-flex align-center">
@@ -154,7 +149,6 @@ else
         </MudItem>
 
         <MudItem xs="12">
-            @* CORREÇÃO MOBILE: Adicionado overflow-hidden no container principal *@
             <MudPaper Elevation="0" Class="pa-4 pa-md-6 border border-solid mud-border-lines-default" Style="border-radius: 16px; overflow: hidden;">
                 <div class="d-flex align-center justify-space-between mb-6">
                     <div class="d-flex align-center">
@@ -168,7 +162,6 @@ else
                 {
                     <MudGrid>
                         <MudItem xs="12" lg="7">
-                            @* CORREÇÃO MOBILE: Container para scroll horizontal se o gráfico bugar *@
                             <div style="width: 100%; overflow-x: auto; padding-bottom: 10px;">
                                 <div style="min-width: 400px;">
                                     <MudChart ChartType="ChartType.Line" ChartSeries="@seriesPrevisao" XAxisLabels="@labelsPrevisao" Width="100%" Height="320px" ChartOptions="@_lineOptions" />
@@ -177,7 +170,6 @@ else
                         </MudItem>
 
                         <MudItem xs="12" lg="5">
-                            @* CORREÇÃO MOBILE: O segredo para tabelas perfeitas no celular *@
                             <div class="previsao-card" style="width: 100%; overflow-x: auto;">
                                 <table class="w-100" style="border-collapse: collapse; min-width: 350px;">
                                     <thead class="header-table">
@@ -219,12 +211,10 @@ else
     private DashboardDto? dashboard;
     private bool _carregando = true;
 
-    // Configurações Pizza
     private double[] dataGrafico = Array.Empty<double>();
     private string[] labelsGrafico = Array.Empty<string>();
     private ChartOptions _chartOptions = new() { ChartPalette = new[] { "#EF4444", "#F59E0B", "#3B82F6", "#8B5CF6", "#10B981" }, ShowLegend = false };
 
-    // Configurações Linha
     private List<ChartSeries> seriesPrevisao = new();
     private string[] labelsPrevisao = Array.Empty<string>();
     private ChartOptions _lineOptions = new() { ChartPalette = new[] { "#10B981", "#EF4444", "#3B82F6" }, YAxisLines = true, XAxisLines = false, InterpolationOption = InterpolationOption.NaturalSpline };
@@ -249,7 +239,6 @@ else
         {
             _carregando = true;
 
-            // 1. Tenta carregar do Cache Local primeiro para dar velocidade na UI
             if (LocalDb.CacheDashboard != null && LocalDb.CacheDashboard.Any())
             {
                 var cache = LocalDb.CacheDashboard.FirstOrDefault();
@@ -262,9 +251,6 @@ else
                 }
             }
 
-            // 2. Lógica de Seleção de Conta:
-            // Se for null (primeiro acesso), busca a conta padrão/ativa.
-            // Se for Guid.Empty, o usuário escolheu "Todas as Contas", então não entra aqui.
             if (FinanceState.SelectedAccountId == null)
             {
                 var contas = await Http.GetFromJsonAsync<List<ContaDto>>("api/contas");
@@ -275,18 +261,15 @@ else
                 }
             }
 
-            // 3. Busca os dados reais na API
             Guid? idParaBuscar = FinanceState.SelectedAccountId;
             if (idParaBuscar != null)
             {
-                // Se idParaBuscar for Guid.Empty, a API retornará o consolidado de todas as contas
                 var dadosApi = await Http.GetFromJsonAsync<DashboardDto>($"api/Dashboard/{idParaBuscar}");
                 if (dadosApi != null)
                 {
                     dashboard = dadosApi;
                     MapearGraficos();
 
-                    // Atualiza o Cache Local
                     LocalDb.CacheDashboard.Clear();
                     LocalDb.CacheDashboard.Add(dashboard);
                     await LocalDb.SaveChanges();
@@ -308,20 +291,16 @@ else
     {
         if (dashboard == null) return;
 
-        // Donut
         dataGrafico = dashboard.DespesasPorCategoria.Select(x => (double)x.Valor).ToArray();
         labelsGrafico = dashboard.DespesasPorCategoria.Select(x => x.Categoria).ToArray();
 
-        // Previsão
+
         if (dashboard.PrevisaoProximosMeses != null)
         {
             var culturaPt = new CultureInfo("pt-BR");
 
-            // Tradução e formatação robusta dos meses
             foreach (var item in dashboard.PrevisaoProximosMeses)
             {
-                // Se o backend enviar "APR" ou "APR.", tentamos converter.
-                // Usamos uma lista de formatos conhecidos para garantir.
                 string[] formats = { "MMM", "MMM.", "MMMM" };
                 if (DateTime.TryParseExact(item.Mes.TrimEnd('.'), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
                 {
