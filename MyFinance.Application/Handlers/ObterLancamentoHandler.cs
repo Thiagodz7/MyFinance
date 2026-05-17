@@ -18,7 +18,6 @@ public class ObterLancamentoHandler : IRequestHandler<ObterLancamentoPorIdQuery,
 
         if (entity == null) return null;
 
-        // Mapeamento Manual (ou use AutoMapper se tiver)
         return new LancamentoDto
         {
             Id = entity.Id,
@@ -29,9 +28,8 @@ public class ObterLancamentoHandler : IRequestHandler<ObterLancamentoPorIdQuery,
             CategoriaId = entity.CategoriaId,
             Pago = entity.Pago,
 
-            // [NOVOS CAMPOS]
             EhRecorrente = entity.EhRecorrente,
-            Frequencia = (int)entity.Frequencia, // Cast pra inteiro pro select do Blazor
+            Frequencia = (int)entity.Frequencia,
             ParcelaAtual = entity.ParcelaAtual,
             TotalParcelas = entity.TotalParcelas,
             GrupoRecorrenciaId = entity.GrupoRecorrenciaId

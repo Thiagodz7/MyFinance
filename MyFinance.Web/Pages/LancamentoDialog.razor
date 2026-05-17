@@ -85,7 +85,10 @@
                 }
             </MudItem>
 
-            @* --- [ADICIONADO] BLOCO DE RECORRÊNCIA --- *@
+            <MudItem xs="12" sm="6">
+                <MudSwitch @bind-Value="Pago" Label="Já está pago/recebido?" Color="Color.Success" />
+            </MudItem>
+
             <MudItem xs="12">
                 <MudSwitch @bind-Value="EhRecorrente" Label="Repetir lançamento" Color="Color.Primary" />
             </MudItem>
@@ -132,7 +135,6 @@
     public string TipoSelecionado { get; set; } = "Despesa";
     public DateTime? DataVencimento { get; set; } = DateTime.Today;
 
-    // --- NOVOS CAMPOS ---
     public bool EhRecorrente { get; set; }
     public int Frequencia { get; set; } = 2;
     public int TotalParcelas { get; set; } = 2;
@@ -147,6 +149,8 @@
         set => DataVencimento = DateTime.TryParse(value, out var dt) ? dt : null;
     }
 
+    public bool Pago { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
         try
@@ -159,10 +163,11 @@
                 Descricao = LancamentoEditar.Descricao;
                 DataVencimento = LancamentoEditar.Data;
 
-                // Mapeamento dos novos campos na edição
                 EhRecorrente = LancamentoEditar.EhRecorrente;
                 Frequencia = LancamentoEditar.Frequencia > 0 ? LancamentoEditar.Frequencia : 2;
                 TotalParcelas = LancamentoEditar.TotalParcelas > 0 ? LancamentoEditar.TotalParcelas : 2;
+
+                Pago = LancamentoEditar.Pago;
 
                 if (LancamentoEditar.Valor < 0)
                 {
@@ -225,7 +230,6 @@
         {
             decimal valorFinal = TipoSelecionado == "Despesa" ? Math.Abs(Valor) * -1 : Math.Abs(Valor);
 
-            // Command unificado enviando os dados de recorrência
             var command = new
             {
                 Id = LancamentoEditar?.Id ?? Guid.Empty,
@@ -236,7 +240,8 @@
                 CategoriaId = _categoriaSelecionada?.Id ?? Guid.Empty,
                 EhRecorrente = EhRecorrente,
                 Frequencia = Frequencia,
-                TotalParcelas = TotalParcelas
+                TotalParcelas = TotalParcelas,
+                Pago = this.Pago,
             };
 
             HttpResponseMessage response;

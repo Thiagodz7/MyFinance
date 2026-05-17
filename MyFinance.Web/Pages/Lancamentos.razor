@@ -6,11 +6,9 @@
 @inject IDialogService DialogService
 @inject MyFinance.Web.Services.PageStateService PageState
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 
 <style>
-    /* CSS Isolado para a modal de exclusão usando o BackgroundClass no overlay */
-
-    /* Botão 1: "Apenas Este" (Laranja) */
     .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1) {
         color: #fb8c00 !important;
         font-weight: 800 !important;
@@ -21,7 +19,6 @@
             color: white !important;
         }
 
-    /* Botão 2: "Este e Próximos" (Vermelho) */
     .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(2) {
         color: #f44336 !important;
         font-weight: 800 !important;
@@ -32,7 +29,6 @@
             color: white !important;
         }
 
-    /* Botão 3: "Cancelar" (Cinza Escuro) */
     .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(3) {
         color: #757575 !important;
         font-weight: 600 !important;
@@ -43,8 +39,6 @@
             color: #424242 !important;
         }
 
-    /* SEÇÃO INTELIGENTE: Quando não é recorrente (só tem Excluir e Cancelar)
-           Neste caso, o primeiro botão é o "Excluir", então forçamos ele a ser vermelho! */
     .mud-overlay.modal-exclusao-pejota ~ .mud-dialog .mud-dialog-actions button:nth-child(1):not(:has(~ button:nth-child(3))) {
         color: #f44336 !important;
     }
@@ -70,28 +64,8 @@
 
 <MudText Typo="Typo.h4" Class="mb-4">Extrato</MudText>
 
-@if (_carregando)
-{
-    <div class="d-flex flex-column align-center justify-center mt-15">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Class="mt-4" Style="color: #64748B;">Sincronizando extrato...</MudText>
-    </div>
-}
-else if (extrato == null || (extrato.Lancamentos != null && !extrato.Lancamentos.Any()))
-{
-    @* --- NOSSO NOVO EMPTY STATE ESTILO TEC AND TEC --- *@
-    <MudEmptyState Title="Extrato Vazio"
-                   Message="Não encontramos nenhum lançamento para esta conta neste período."
-                   Icon="@Icons.Material.Filled.ReceiptLong"
-                   IconColor="Color.Secondary"
-                   ActionText="Novo Lançamento"
-                   OnActionClick="@(() => AbrirDialog(null))" />
-}
-else
-{
-    @* --- SELETOR DE MÊS/ANO --- *@
-    <div class="d-flex align-center gap-4 mb-4" style="max-width: 300px;">
-        <ResponsiveDatePicker Label="Mês de Referência"
+<div class="d-flex align-center gap-4 mb-4" style="max-width: 300px;">
+    @*   <ResponsiveDatePicker Label="Mês de Referência"
                               @bind-Date="_dataFiltro"
                               IsMonthPicker="true"
                               OpenTo="OpenTo.Month"
@@ -103,18 +77,37 @@ else
                    OnClick="BuscarPorPeriodo"
                    DropShadow="false">
             Buscar
-        </MudButton>
+        </MudButton> *@
+    <SeletorMes @bind-DataSelecionada="_dataFiltro" OnMudancaPeriodo="BuscarPorPeriodo" />
+</div>
+
+@if (_carregando)
+{
+    <div class="d-flex flex-column align-center justify-center mt-15">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-4" Style="color: #64748B;">Sincronizando extrato...</MudText>
     </div>
+}
+else if (extrato == null || (extrato.Lancamentos != null && !extrato.Lancamentos.Any()))
+{
+    <MudEmptyState Title="Extrato Vazio"
+                   Message="Não encontramos nenhum lançamento para esta conta neste período."
+                   Icon="@Icons.Material.Filled.ReceiptLong"
+                   IconColor="Color.Secondary"
+                   ActionText="Novo Lançamento"
+                   OnActionClick="@(() => AbrirDialog(null))" />
+}
+else
+{
+   
 
     <MudPaper Class="pa-4 mb-6 d-flex flex-wrap justify-space-between align-center gap-4" Elevation="0" Style="border: 1px solid #E2E8F0; border-radius: 12px; background-color: #F8FAFC;">
 
-        @* Bloco 1: Nome da Conta *@
         <div style="flex: 1; min-width: 150px;">
             <MudText Typo="Typo.caption" Style="color: #94A3B8; font-weight: 700; text-transform: uppercase;">Conta Selecionada</MudText>
             <MudText Typo="Typo.h6" Style="color: #1E293B; font-weight: 800; line-height: 1.2;">@extrato.NomeConta</MudText>
         </div>
 
-        @* Bloco 2: Saldo Anterior (O que sobrou dos meses passados) *@
         <div class="text-end" style="flex: 1; min-width: 120px; border-right: 1px solid #E2E8F0; padding-right: 16px;">
             <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 700; text-transform: uppercase;">Saldo Anterior</MudText>
             <MudText Typo="Typo.subtitle1" Color="@(extrato.SaldoAnterior >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
@@ -122,7 +115,6 @@ else
             </MudText>
         </div>
 
-        @* Bloco 3: Lucro do Mês (Entradas vs Saídas do mês atual) *@
         <div class="text-end" style="flex: 1; min-width: 120px; border-right: 1px solid #E2E8F0; padding-right: 16px;">
             <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 700; text-transform: uppercase;">Resultado do Mês</MudText>
             <MudText Typo="Typo.subtitle1" Color="@(extrato.LucroDoMes >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
@@ -130,10 +122,16 @@ else
             </MudText>
         </div>
 
-        @* Bloco 4: Saldo Atual (O Valor Final na Conta) *@
+        <div class="text-end" style="flex: 1; min-width: 120px; border-right: 1px solid #E2E8F0; padding-right: 16px;">
+            <MudText Typo="Typo.caption" Style="color: #0F172A; font-weight: 800; text-transform: uppercase;" title="Soma apenas dos lançamentos já pagos/recebidos">Saldo Atual (Real)</MudText>
+            <MudText Typo="Typo.h5" Color="@(extrato.SaldoReal >= 0 ? Color.Success : Color.Error)" Style="font-weight: 900;">
+                @extrato.SaldoReal.ToString("C2")
+            </MudText>
+        </div>
+
         <div class="text-end" style="flex: 1; min-width: 120px;">
-            <MudText Typo="Typo.caption" Style="color: #0F172A; font-weight: 800; text-transform: uppercase;">Saldo Atual</MudText>
-            <MudText Typo="Typo.h5" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)" Style="font-weight: 900;">
+            <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 800; text-transform: uppercase;" title="Saldo no fim do mês contando os pendentes">Saldo Final (Previsto)</MudText>
+            <MudText Typo="Typo.h6" Color="@(extrato.SaldoAtual >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700; opacity: 0.7;">
                 @extrato.SaldoAtual.ToString("C2")
             </MudText>
         </div>
@@ -146,6 +144,15 @@ else
                    OnClick="@(() => AbrirDialog(null))">
             Novo Lançamento
         </MudButton>
+
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.Description"
+                   OnClick="ExportarParaExcel"
+                   Disabled="extrato == null"
+                   DropShadow="false">
+            Exportar Excel
+        </MudButton>
     </div>
 
     <MudTable Items="@extrato.Lancamentos" Hover="true" Striped="true" Dense="true">
@@ -154,13 +161,16 @@ else
             <MudTh>Descrição</MudTh>
             <MudTh>Categoria</MudTh>
             <MudTh>Valor</MudTh>
+            <MudTh>Situação</MudTh>
             <MudTh>Ações</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Data">@context.Data.ToString("dd/MM/yyyy")</MudTd>
             <MudTd DataLabel="Descrição">
                 <div class="d-flex align-center">
-                    @context.Descricao
+                    <MudText Style="@(context.Pago ? "text-decoration: line-through; color: #94A3B8;" : "")">
+                        @context.Descricao
+                    </MudText>
                     @if (context.EhRecorrente)
                     {
                         <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text" Class="ml-2">
@@ -169,6 +179,7 @@ else
                     }
                 </div>
             </MudTd>
+
             <MudTd DataLabel="Categoria">
                 <MudChip T="string"
                          Size="Size.Small"
@@ -178,11 +189,22 @@ else
                     @context.Categoria
                 </MudChip>
             </MudTd>
+
             <MudTd DataLabel="Valor">
                 <MudText Color="@(context.Valor >= 0 ? Color.Success : Color.Error)" Style="font-weight: 700;">
                     @context.Valor.ToString("C2")
                 </MudText>
             </MudTd>
+
+            <MudTd DataLabel="Situação">
+                <MudTooltip Text="@(context.Pago ? "Marcar como pendente" : "Marcar como pago/recebido")">
+                    <MudIconButton Icon="@(context.Pago? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.RadioButtonUnchecked)"
+                                   Color="@(context.Pago ? Color.Success : Color.Default)"
+                                   OnClick="@(() => AlternarStatusPagamento(context))"
+                                   Size="Size.Small" />
+                </MudTooltip>
+            </MudTd>
+
             <MudTd DataLabel="Ações">
                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Warning" OnClick="@(() => AbrirDialog(context))" />
                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => ConfirmarExclusaoComOpcoes(context))" />
@@ -205,13 +227,12 @@ else
 
     private async Task ConfirmarExclusaoComOpcoes(LancamentoDto lancamento)
     {
-        // Definimos uma classe específica para esta modal não afetar a de "Editar"
         var options = new DialogOptions
         {
             CloseOnEscapeKey = true,
             MaxWidth = MaxWidth.Small,
             FullWidth = true,
-            BackgroundClass = "modal-exclusao-pejota" // Isso isola o CSS
+            BackgroundClass = "modal-exclusao-pejota" 
         };
 
         if (lancamento.EhRecorrente)
@@ -257,7 +278,7 @@ else
         try
         {
             var valor = (int)tipoExclusao;
-            // O nome do parâmetro na URL deve ser EXATAMENTE 'tipoExclusao' (igual ao nome no argumento do Controller)
+
             var url = $"api/Lancamentos/{id}?tipoExclusao={valor}";
 
             Console.WriteLine($"Chamando URL: {url}"); 
@@ -311,7 +332,6 @@ else
             _carregando = true;
             var idContaSelecionada = FinanceState.SelectedAccountId;
 
-            // Pega o mês/ano do picker ou cai no default
             var mes = _dataFiltro?.Month ?? DateTime.Now.Month;
             var ano = _dataFiltro?.Year ?? DateTime.Now.Year;
 
@@ -366,5 +386,68 @@ else
             await CarregarExtrato();
             StateHasChanged();
         });
+    }
+
+    private async Task AlternarStatusPagamento(LancamentoDto lancamento)
+    {
+        try
+        {
+            var novoStatus = !lancamento.Pago;
+            var command = new { Id = lancamento.Id, Pago = novoStatus };
+
+            var response = await Http.PatchAsJsonAsync($"api/lancamentos/{lancamento.Id}/status", command);
+
+            if (response.IsSuccessStatusCode)
+            {
+                lancamento.Pago = novoStatus;
+                Snackbar.Add(novoStatus ? "Marcado como pago!" : "Marcado como pendente.", Severity.Success);
+
+                await CarregarExtrato();
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Erro ao alterar o status.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task ExportarParaExcel()
+    {
+        if (extrato == null || FinanceState.SelectedAccountId == null) return;
+
+        try
+        {
+            var mes = _dataFiltro?.Month ?? DateTime.Now.Month;
+            var ano = _dataFiltro?.Year ?? DateTime.Now.Year;
+            var idConta = FinanceState.SelectedAccountId;
+
+            Snackbar.Add("Gerando planilha Excel...", Severity.Info);
+
+            var response = await Http.GetAsync($"api/lancamentos/exportar?contaId={idConta}&mes={mes}&ano={ano}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                var nomeArquivo = response.Content.Headers.ContentDisposition?.FileName ?? "extrato.xlsx";
+
+                var base64 = Convert.ToBase64String(bytes);
+                await JS.InvokeVoidAsync("downloadFileFromBytes", nomeArquivo, base64);
+
+                Snackbar.Add("Download concluído!", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Erro ao gerar arquivo Excel.", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Erro: {ex.Message}", Severity.Error);
+        }
     }
 }

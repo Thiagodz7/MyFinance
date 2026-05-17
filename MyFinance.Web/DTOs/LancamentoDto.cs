@@ -11,11 +11,11 @@
         public Guid CategoriaId { get; set; }
         public Guid ContaId { get; set; }
 
-        // [NOVOS] Campos de Recorrência
         public bool EhRecorrente { get; set; }
         public int Frequencia { get; set; }
         public int ParcelaAtual { get; set; }
         public int TotalParcelas { get; set; }
         public Guid? GrupoRecorrenciaId { get; set; }
+        public bool Pago { get; set; } 
     }
 }

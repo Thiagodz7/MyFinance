@@ -1,5 +1,6 @@
 ﻿@inherits LayoutComponentBase
 @using MyFinance.Web.Pages.Conta.Componentes
+@using MyFinance.Web.Shared
 @using MyFinance.Web.Themes
 @inject MyFinance.Web.Services.PageStateService PageState
 @inject MyFinance.Web.Services.FinanceStateService FinanceState
@@ -11,6 +12,7 @@
 @using MyFinance.Web.Services.Auth
 @inject IAuthService AuthService
 @inject NavigationManager Navigation
+@inject IDialogService DialogService
 
 <MudThemeProvider Theme="MyFinanceTheme.DefaultTheme" />
 <MudDialogProvider />
@@ -25,7 +27,6 @@
                Fixed="true">
 
         <MudDrawerHeader Class="@(_drawerOpen ? "d-flex align-center justify-start pa-4" : "d-flex align-center justify-center pa-2")">
-            @* <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Color="Color.Secondary" Size="Size.Large" Class="@(_drawerOpen ? "mr-2" : "")" /> *@
             <MudImage Src="icon-192.png" Alt="Pejota.io Logo" Width="32" Height="32" Class="mr-3 rounded-lg" />
 
             @if (_drawerOpen)
@@ -36,7 +37,6 @@
 
         <MudNavMenu Class="mt-4" Color="Color.Secondary">
 
-            @* Se for Desktop, mostra tudo na lateral. Se for Mobile, os principais vão para a barra inferior *@
             @if (!_isMobile)
             {
                 <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
@@ -59,18 +59,21 @@
            
             <MudNavLink Href="/categorias" Icon="@Icons.Material.Filled.Category">Categorias</MudNavLink>
 
-            @* Botão de Sair no menu lateral para Mobile *@
             @if (_isMobile)
             {
                 <MudNavLink OnClick="Sair" Icon="@Icons.Material.Filled.Logout" Style="color: #EF4444;">Sair</MudNavLink>
             }
         </MudNavMenu>
 
-        <div class="d-flex justify-center mt-auto mb-4">
-            <MudText Typo="Typo.caption" Style="color: #64748B;">
-                @(_drawerOpen ? "v1.0.0" : "v1.0")
-            </MudText>
-        </div>
+         <div class="d-flex justify-center mt-auto mb-4">
+              <MudButton Variant="Variant.Text"
+                       Color="Color.Inherit"
+                       Size="Size.Small"
+                       OnClick="AbrirModalNovidades"
+                       Style="opacity: 0.5; text-transform: none; font-size: 0.75rem;">
+                v1.1.0 (Ver Novidades ✨)
+            </MudButton>
+        </div> 
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <div class="px-4 pb-4 pt-2">
@@ -108,14 +111,12 @@
         }
     </MudAppBar>
 
-    @* Adicionamos a classe mobile-content-padding aqui *@
     <MudMainContent Class="@($"px-4 {(_isMobile ? "mobile-content-padding" : "")}")" Style="padding-top: 85px;">
         <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
             @Body
         </MudContainer>
     </MudMainContent>
 
-    @* --- BOTTOM NAVIGATION EXCLUSIVA PARA MOBILE --- *@
     @if (_isMobile)
     {
         <div class="bottom-nav-bar">
@@ -167,7 +168,6 @@
 
         await InvokeAsync(() =>
         {
-            // Força o menu a fechar quando muda para mobile, e abrir quando vai para PC
             if (_isMobile != wasMobile)
             {
                 _drawerOpen = !_isMobile;
@@ -194,5 +194,11 @@
     {
         await AuthService.Logout();
         Navigation.NavigateTo("/login");
+    }
+
+    private void AbrirModalNovidades()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogService.Show<NovidadesDialog>(string.Empty, options);
     }
 }

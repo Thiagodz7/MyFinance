@@ -1,0 +1,51 @@
+﻿<MudDialog>
+    <TitleContent>
+        <div class="d-flex align-center gap-2">
+            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Color="Color.Info" />
+            <MudText Typo="Typo.h6" Style="font-weight: 800;">Novidades do Pejota.io</MudText>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex align-center gap-2 mb-4">
+            <MudChip T="string" Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled">v1.1.0</MudChip>
+            <MudText Typo="Typo.caption" Style="color: #64748B; font-weight: 600;">LANÇADO EM Março/2026</MudText>
+        </div>
+
+        <MudTimeline TimelinePosition="TimelinePosition.Start" Modifiers="true" Class="pa-0">
+            <MudTimelineItem Color="Color.Success" Size="Size.Small">
+                <ItemContent>
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1E293B;">🛡️ Controle de Pagamentos (Flag Pago)</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-1" Style="color: #64748B;">
+                        Agora você pode marcar seus lançamentos como pagos direto no extrato com um clique. O cabeçalho diferencia o <b>Saldo Real</b> do <b>Saldo Previsto</b> para facilitar a conciliação com o seu banco!
+                    </MudText>
+                </ItemContent>
+            </MudTimelineItem>
+
+            <MudTimelineItem Color="Color.Info" Size="Size.Small">
+                <ItemContent>
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1E293B;">📊 Exportação de Extrato para Excel</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-1" Style="color: #64748B;">
+                        Gere relatórios legítimos em <code>.xlsx</code> com um clique. O arquivo já vem totalmente estilizado nas cores do sistema e com colunas auto-ajustadas.
+                    </MudText>
+                </ItemContent>
+            </MudTimelineItem>
+
+            <MudTimelineItem Color="Color.Secondary" Size="Size.Small">
+                <ItemContent>
+                    <MudText Typo="Typo.subtitle2" Style="font-weight: 700; color: #1E293B;">📅 Seletor Dinâmico de Meses</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-1" Style="color: #64748B;">
+                        Botões rápidos de avançar e retroceder período integrados ao campo de data. Chega de cliques repetitivos!
+                    </MudText>
+                </ItemContent>
+            </MudTimelineItem>
+        </MudTimeline>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Fechar" DropShadow="false">Entendi, vamos lá!</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+    void Fechar() => MudDialog.Close();
+}
